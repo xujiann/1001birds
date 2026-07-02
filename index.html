@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="1001飞鸟">
+<title>1001 只飞鸟 · 1001 Birds</title>
+<meta name="description" content="精选世界1001种飞鸟的双语图鉴画廊，按目/科分类，含分布、习性与保护等级。A bilingual field-guide gallery of the world's birds.">
+<meta name="theme-color" content="#0a0f0d">
+<meta property="og:type" content="website">
+<meta property="og:title" content="1001 只飞鸟 · 1001 Birds">
+<meta property="og:description" content="精选世界飞鸟的双语图鉴画廊 · 按目/科分类，含分布、习性与保护等级">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232fa374'/%3E%3Ctext x='16' y='23' font-size='19' text-anchor='middle' fill='white' font-family='Georgia,serif'%3E%F0%9F%95%8A%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-title">
+      <h1><span id="t-main">1001</span><span id="t-sub"> 只飞鸟</span></h1>
+      <p class="subtitle" id="t-subtitle">飞羽之美 · 从鸵鸟到蜂鸟的生命图谱</p>
+    </div>
+    <div class="header-right">
+      <div class="header-stats" id="stats">
+        <span class="stat"><strong id="shown-count">0</strong> <span id="t-species">种</span></span>
+        <span class="stat"><strong id="order-count">0</strong> <span id="t-orders">目</span></span>
+        <span class="stat"><strong id="family-count">0</strong> <span id="t-families">科</span></span>
+      </div>
+      <button id="lang-toggle" class="lang-btn" title="语言 / Language">EN</button>
+    </div>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="search-wrap">
+    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" id="search" placeholder="搜索鸟名、学名、目/科…" autocomplete="off">
+    <button class="clear-btn" id="clear-search" title="清除">✕</button>
+  </div>
+  <div class="filter-row">
+    <select id="group-filter"><option value="">全部类群</option></select>
+    <select id="realm-filter"><option value="">全部地理界</option></select>
+    <select id="iucn-filter"><option value="">全部保护等级</option></select>
+    <select id="sort-filter" aria-label="排序">
+      <option value="default">默认（分类顺序）</option>
+      <option value="name">按中文名</option>
+      <option value="iucn">按濒危程度</option>
+    </select>
+    <button id="taxo-btn" class="btn-outline btn-text">分类树</button>
+    <button id="fav-only-btn" class="btn-outline btn-text">♥ 收藏</button>
+    <button id="daily-btn" class="btn-outline btn-text">每日一鸟</button>
+    <button id="random-btn" class="btn-accent">随机一鸟</button>
+    <button id="view-toggle" class="btn-outline" title="切换视图">⊞</button>
+    <button id="help-btn" class="btn-outline" title="快捷键" aria-label="快捷键">?</button>
+  </div>
+</div>
+
+<div class="taxo-nav" id="taxo-nav" style="display:none"></div>
+<div class="crumb-bar" id="crumb-bar" style="display:none"></div>
+
+<main class="gallery" id="gallery"></main>
+<div class="pagination" id="pagination"></div>
+
+<div class="modal-overlay" id="modal" role="dialog" aria-modal="true" aria-label="鸟类详情">
+  <div class="modal-box">
+    <button class="modal-close" id="modal-close" aria-label="关闭">✕</button>
+    <div class="modal-content">
+      <div class="modal-img-wrap" id="modal-img-wrap">
+        <img id="modal-img" alt="">
+        <button class="zoom-badge" id="zoom-badge" title="放大">⛶</button>
+      </div>
+      <div class="modal-info">
+        <div class="modal-head">
+          <div class="modal-badges">
+            <span class="modal-order-badge" id="modal-order"></span>
+            <span class="modal-iucn-badge" id="modal-iucn"></span>
+          </div>
+          <div class="modal-head-actions">
+            <button class="modal-fav" id="modal-fav">♡ 收藏</button>
+            <button class="modal-share" id="modal-share" title="复制链接">⎘</button>
+          </div>
+        </div>
+        <h2 id="modal-title"></h2>
+        <p class="modal-sci" id="modal-sci"></p>
+        <p class="modal-en" id="modal-en"></p>
+        <button class="modal-taxo-link" id="modal-taxo-link">查看该科全部鸟类 →</button>
+        <dl class="modal-meta">
+          <dt id="l-order">目</dt><dd id="modal-order-full"></dd>
+          <dt id="l-family">科</dt><dd id="modal-family"></dd>
+          <dt id="l-realm">地理分布</dt><dd id="modal-realm"></dd>
+          <dt id="l-iucn">保护等级</dt><dd id="modal-iucn-full"></dd>
+        </dl>
+        <p class="modal-desc" id="modal-desc"></p>
+        <p class="modal-credit" id="modal-credit"></p>
+        <div class="modal-nav">
+          <button id="prev-item">← 上一种</button>
+          <span id="modal-num"></span>
+          <button id="next-item">下一种 →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="高清大图">
+  <div class="lightbox-toolbar">
+    <span class="lb-caption" id="lb-caption"></span>
+    <span class="lb-actions">
+      <button id="lb-zoomout" title="缩小">－</button>
+      <button id="lb-zoomin" title="放大">＋</button>
+      <button id="lb-reset" title="重置">⟲</button>
+      <a id="lb-original" href="#" target="_blank" rel="noopener" class="lb-link" title="查看原图">⧉ <span id="t-original">原图</span></a>
+      <button id="lb-close" title="关闭">✕</button>
+    </span>
+  </div>
+  <div class="lightbox-stage" id="lb-stage">
+    <img id="lb-img" alt="" draggable="false">
+    <div class="lb-spinner" id="lb-spinner"></div>
+  </div>
+  <div class="lb-hint" id="lb-hint">滚轮缩放 · 双击放大 · 拖动平移</div>
+</div>
+
+<div class="no-results" id="no-results" style="display:none">
+  <p id="t-noresults">未找到符合条件的鸟类</p>
+  <button id="reset-btn">重置筛选</button>
+</div>
+
+<div class="help-overlay" id="help-overlay" role="dialog" aria-modal="true" aria-label="键盘快捷键">
+  <div class="help-box">
+    <button class="help-close" id="help-close" aria-label="关闭">✕</button>
+    <h2 id="help-title">快捷键</h2>
+    <dl class="help-list">
+      <dt><kbd>/</kbd></dt><dd id="kbd-search">聚焦搜索框</dd>
+      <dt><kbd>R</kbd></dt><dd id="kbd-random">随机一鸟</dd>
+      <dt><kbd>T</kbd></dt><dd id="kbd-taxo">切换分类树</dd>
+      <dt><kbd>F</kbd></dt><dd id="kbd-fav">切换仅看收藏</dd>
+      <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd id="kbd-nav">上一种 / 下一种</dd>
+      <dt><kbd>Esc</kbd></dt><dd id="kbd-close">关闭弹窗</dd>
+    </dl>
+  </div>
+</div>
+
+<div class="about-overlay" id="about-overlay" role="dialog" aria-modal="true" aria-label="关于本站">
+  <div class="about-box">
+    <button class="help-close" id="about-close" aria-label="关闭">✕</button>
+    <div class="about-logo">🕊</div>
+    <h2 id="about-title">关于本站</h2>
+    <div class="about-stats" id="about-stats"></div>
+    <p id="about-intro"></p>
+    <p id="about-sources"></p>
+    <a class="about-gh" id="about-github" href="https://github.com/xujiann/1001birds" target="_blank" rel="noopener">GitHub 源码</a>
+  </div>
+</div>
+
+<div id="live" class="sr-only" aria-live="polite"></div>
+<button id="to-top" class="to-top" aria-label="回到顶部" title="回到顶部">↑</button>
+
+<footer class="site-footer">
+  <p id="t-footer">精选世界1001种飞鸟 · 数据来自 Wikidata / Wikimedia Commons / Wikipedia</p>
+  <button class="footer-about" id="about-btn">关于本站</button>
+</footer>
+
+<script defer src="birds.js"></script>
+<script defer src="app.js"></script>
+</body>
+</html>
