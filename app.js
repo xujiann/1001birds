@@ -2,8 +2,8 @@
 (function(){
 'use strict';
 const DATA = (window.BIRD_DATA || []).slice();
-// 图片基址：本地预览用相对路径，部署时改为 jsDelivr CDN
-const IMG_BASE = '';
+// 图片基址：jsDelivr CDN（图床仓库 xujiann/1001birds-img@v1）。本地预览可临时置空。
+const IMG_BASE = 'https://cdn.jsdelivr.net/gh/xujiann/1001birds-img@v1/';
 const imgURL = p => IMG_BASE + p;
 const commonsURL = f => f && /^https?:/.test(f) ? f : 'https://commons.wikimedia.org/wiki/Special:FilePath/' + encodeURIComponent(f||'');
 
