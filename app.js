@@ -162,7 +162,8 @@ function fillModal(){
   $('#modal-family').textContent = b.family_zh+' '+b.family_en;
   $('#modal-realm').textContent = [b.realm, b.group].filter(Boolean).join(' · ') || '—';
   $('#modal-iucn-full').textContent = b.iucn ? b.iucn+' '+(IUCN_LABEL[lang][b.iucn]||'') : '—';
-  $('#modal-desc').textContent = (lang==='zh'? b.desc_zh : b.desc_en) || b.desc_zh || b.desc_en || '';
+  const dd = (window.BIRD_DESCS && window.BIRD_DESCS[b.id]) || ['',''];
+  $('#modal-desc').textContent = (lang==='zh'? (dd[0]||dd[1]) : (dd[1]||dd[0])) || (window.BIRD_DESCS ? '' : '…');
   const fav = $('#modal-fav'); fav.className='modal-fav'+(favs.has(b.id)?' on':''); fav.textContent = favs.has(b.id)?'♥ 已收藏':'♡ 收藏';
   $('#modal-credit').innerHTML = b.file? `${L[lang].source}: <a href="${commonsURL(b.file)}" target="_blank" rel="noopener">Wikimedia Commons</a>`:'';
   $('#modal-num').textContent = (modalIdx+1)+L[lang].of+filtered.length;
@@ -308,4 +309,11 @@ if(initQ){ state.q = initQ; $('#search').value = initQ; }
 apply();
 const initId = +params.get('id');
 if(initId) openModal(initId);
+
+// lazy-load descriptions (74% of data) after core render — refills any open modal on arrival
+setTimeout(function loadDescs(){
+  const s=document.createElement('script'); s.src='descs.js?v=3';
+  s.onload=()=>{ if($('#modal').classList.contains('open')) fillModal(); };
+  document.head.appendChild(s);
+}, 200);
 })();
