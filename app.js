@@ -2,8 +2,8 @@
 (function(){
 'use strict';
 const DATA = (window.BIRD_DATA || []).slice();
-// 图片基址：jsDelivr CDN（图床仓库 xujiann/1001birds-img@v1）。本地预览可临时置空。
-const IMG_BASE = 'https://cdn.jsdelivr.net/gh/xujiann/1001birds-img@v1/';
+// 图片基址：jsDelivr CDN（图床仓库 xujiann/1001birds-img@v2）。本地预览可临时置空。
+const IMG_BASE = 'https://cdn.jsdelivr.net/gh/xujiann/1001birds-img@v2/';
 const imgURL = p => IMG_BASE + p;
 const commonsURL = f => f && /^https?:/.test(f) ? f : 'https://commons.wikimedia.org/wiki/Special:FilePath/' + encodeURIComponent(f||'');
 
@@ -19,7 +19,7 @@ const L = {
     prev:'← 上一种', next:'下一种 →', nores:'未找到符合条件的鸟类', reset:'重置筛选',
     footer:'精选世界1001种飞鸟 · 数据来自 Wikidata / Wikimedia Commons / Wikipedia',
     original:'原图', credit:'图片', source:'来源', of:' / 共 ',
-    aboutIntro:'「1001 只飞鸟」精选世界各地具代表性的鸟类，按严谨的目/科分类编排，兼顾图鉴的信息与画廊的美感。当前为首期 100 种，覆盖 30 余个目。',
+    aboutIntro:'「1001 只飞鸟」精选世界各地具代表性的鸟类，按严谨的目/科分类编排，兼顾图鉴的信息与画廊的美感。现已收录 1001 种，覆盖 40+ 目、150+ 科。',
     aboutSources:'分类与元数据来自 Wikidata，图片来自 Wikimedia Commons，简介来自 Wikipedia。每张图片均保留原作者署名与许可。'},
   en:{sub:' Birds', species:'species', orders:'orders', families:'families', search:'Search name, sci. name, order/family…',
     allGroup:'All groups', allRealm:'All realms', allIucn:'All statuses',
@@ -28,7 +28,7 @@ const L = {
     prev:'← Prev', next:'Next →', nores:'No birds match your filters', reset:'Reset',
     footer:'A curated gallery of the world\'s birds · Data from Wikidata / Wikimedia Commons / Wikipedia',
     original:'Original', credit:'Image', source:'Source', of:' / of ',
-    aboutIntro:'“1001 Birds” is a curated, bilingual field-guide gallery of representative birds worldwide, organised by strict order/family taxonomy. This first phase covers 100 species across 30+ orders.',
+    aboutIntro:'“1001 Birds” is a curated, bilingual field-guide gallery of representative birds worldwide, organised by strict order/family taxonomy. It now holds 1001 species across 40+ orders and 150+ families.',
     aboutSources:'Taxonomy and metadata from Wikidata, images from Wikimedia Commons, summaries from Wikipedia. Each image keeps its author attribution and licence.'},
 };
 let lang = localStorage.getItem('birds_lang') || 'zh';
@@ -45,7 +45,7 @@ let dailyId = -1;
 
 const $ = s => document.querySelector(s);
 const el = (tag,cls,html)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e;};
-const nm = b => lang==='zh' ? b.zh : (b.en||b.zh);
+const nm = b => lang==='zh' ? (b.zh||b.en) : (b.en||b.zh);
 const orderName = b => lang==='zh' ? b.order_zh : b.order_en;
 const familyName = b => lang==='zh' ? b.family_zh : b.family_en;
 
@@ -154,14 +154,14 @@ function fillModal(){
   const daily = $('#modal-daily'); if(daily) daily.remove();
   if(b.id===dailyId){ const d=el('span','modal-daily-badge','🗓 '+(lang==='zh'?'今日一鸟':'Bird of the day')); d.id='modal-daily'; $('#modal-badges').appendChild(d); }
   $('#modal-order').textContent = orderName(b);
-  const ib = $('#modal-iucn'); ib.textContent = b.iucn+' · '+(IUCN_LABEL[lang][b.iucn]||''); ib.className='modal-iucn-badge iucn-'+b.iucn;
+  const ib = $('#modal-iucn'); if(b.iucn){ ib.style.display=''; ib.textContent = b.iucn+' · '+(IUCN_LABEL[lang][b.iucn]||''); ib.className='modal-iucn-badge iucn-'+b.iucn; } else { ib.style.display='none'; }
   $('#modal-title').textContent = nm(b);
   $('#modal-sci').textContent = b.sci;
   $('#modal-en').textContent = lang==='zh'? b.en : '';
   $('#modal-order-full').textContent = b.order_zh+' '+b.order_en;
   $('#modal-family').textContent = b.family_zh+' '+b.family_en;
-  $('#modal-realm').textContent = b.realm + (b.group? ' · '+b.group : '');
-  $('#modal-iucn-full').textContent = b.iucn+' '+(IUCN_LABEL[lang][b.iucn]||'');
+  $('#modal-realm').textContent = [b.realm, b.group].filter(Boolean).join(' · ') || '—';
+  $('#modal-iucn-full').textContent = b.iucn ? b.iucn+' '+(IUCN_LABEL[lang][b.iucn]||'') : '—';
   $('#modal-desc').textContent = (lang==='zh'? b.desc_zh : b.desc_en) || b.desc_zh || b.desc_en || '';
   const fav = $('#modal-fav'); fav.className='modal-fav'+(favs.has(b.id)?' on':''); fav.textContent = favs.has(b.id)?'♥ 已收藏':'♡ 收藏';
   $('#modal-credit').innerHTML = b.file? `${L[lang].source}: <a href="${commonsURL(b.file)}" target="_blank" rel="noopener">Wikimedia Commons</a>`:'';
@@ -220,8 +220,8 @@ function updateCrumb(){
 
 // ---- filters population ----
 function fillSelects(){
-  const groups=[...new Set(DATA.map(b=>b.group))];
-  const realms=[...new Set(DATA.map(b=>b.realm))];
+  const groups=[...new Set(DATA.map(b=>b.group))].filter(Boolean);
+  const realms=[...new Set(DATA.map(b=>b.realm))].filter(Boolean);
   const iucns=['EX','EW','CR','EN','VU','NT','LC'].filter(k=>DATA.some(b=>b.iucn===k));
   $('#group-filter').innerHTML=`<option value="">${L[lang].allGroup}</option>`+groups.map(g=>`<option value="${g}">${g}</option>`).join('');
   $('#realm-filter').innerHTML=`<option value="">${L[lang].allRealm}</option>`+realms.map(r=>`<option value="${r}">${r}</option>`).join('');
