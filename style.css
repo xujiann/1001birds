@@ -129,7 +129,8 @@ select:focus{border-color:var(--accent)}
 .modal-close:hover{background:var(--border);color:#fff}
 .modal-content{display:grid;grid-template-columns:1fr 1fr;min-height:400px}
 .modal-img-wrap{position:relative;background:var(--bg3);border-radius:16px 0 0 16px;overflow:hidden;min-height:300px;cursor:zoom-in}
-.modal-img-wrap img{width:100%;height:100%;object-fit:contain;display:block}
+.modal-img-wrap img{width:100%;height:100%;object-fit:contain;display:block;opacity:0;transition:opacity 0.35s ease}
+.modal-img-wrap img.ready{opacity:1}
 .zoom-badge{position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.15);color:#fff;width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);transition:all var(--trans)}
 .zoom-badge:hover{background:var(--accent)}
 .modal-info{padding:2rem;display:flex;flex-direction:column;gap:0.7rem}
@@ -137,6 +138,7 @@ select:focus{border-color:var(--accent)}
 .modal-badges{display:flex;gap:0.4rem;flex-wrap:wrap}
 .modal-order-badge{display:inline-block;padding:0.25rem 0.75rem;border-radius:20px;font-size:0.72rem;font-weight:500;background:rgba(47,163,116,0.2);color:var(--accent2);letter-spacing:0.04em;width:fit-content}
 .modal-iucn-badge{display:inline-block;padding:0.25rem 0.7rem;border-radius:20px;font-size:0.72rem;font-weight:600}
+.modal-daily-badge{display:inline-block;padding:0.25rem 0.7rem;border-radius:20px;font-size:0.72rem;font-weight:600;background:rgba(212,168,67,0.18);color:var(--gold)}
 .modal-head-actions{display:flex;gap:0.4rem;flex-shrink:0;margin-left:auto}
 .modal-fav{flex-shrink:0;background:var(--bg3);border:1px solid var(--border);border-radius:20px;color:var(--text2);font-size:0.78rem;padding:0.3rem 0.85rem;cursor:pointer;transition:all var(--trans)}
 .modal-fav:hover{border-color:#c2456a;color:#ff6b8a}

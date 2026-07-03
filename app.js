@@ -41,6 +41,7 @@ const saveFavs = () => localStorage.setItem('birds_favs', JSON.stringify([...fav
 let state = { q:'', group:'', realm:'', iucn:'', fam:'', sort:'default', favOnly:false, page:0, taxoOpen:false, list:'' };
 let filtered = DATA.slice();
 let modalIdx = -1;
+let dailyId = -1;
 
 const $ = s => document.querySelector(s);
 const el = (tag,cls,html)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e;};
@@ -146,7 +147,12 @@ function openModal(id){
 function currentModalBird(){ return (modalIdx>=0 && filtered[modalIdx]) || DATA.find(b=>b.id===+new URLSearchParams(location.search).get('id')); }
 function fillModal(){
   const b = filtered[modalIdx]; if(!b) return;
-  $('#modal-img').src = imgURL(b.img); $('#modal-img').alt = nm(b);
+  const mi = $('#modal-img'); mi.classList.remove('ready'); mi.alt = nm(b);
+  mi.onload = ()=>mi.classList.add('ready');
+  mi.src = imgURL(b.img);
+  if(mi.complete) mi.classList.add('ready');
+  const daily = $('#modal-daily'); if(daily) daily.remove();
+  if(b.id===dailyId){ const d=el('span','modal-daily-badge','🗓 '+(lang==='zh'?'今日一鸟':'Bird of the day')); d.id='modal-daily'; $('#modal-badges').appendChild(d); }
   $('#modal-order').textContent = orderName(b);
   const ib = $('#modal-iucn'); ib.textContent = b.iucn+' · '+(IUCN_LABEL[lang][b.iucn]||''); ib.className='modal-iucn-badge iucn-'+b.iucn;
   $('#modal-title').textContent = nm(b);
@@ -254,7 +260,7 @@ $('#sort-filter').onchange=e=>{state.sort=e.target.value;apply();};
 $('#taxo-btn').onclick=()=>{state.taxoOpen=!state.taxoOpen;$('#taxo-nav').style.display=state.taxoOpen?'block':'none';$('#taxo-btn').classList.toggle('active',state.taxoOpen);if(state.taxoOpen)buildTaxo();};
 $('#fav-only-btn').onclick=()=>{state.favOnly=!state.favOnly;$('#fav-only-btn').classList.toggle('active',state.favOnly);apply();};
 $('#random-btn').onclick=()=>{const b=DATA[Math.floor(Math.random()*DATA.length)];openModal(b.id);};
-$('#daily-btn').onclick=()=>{const d=Math.floor(Date.now()/864e5)%DATA.length;openModal(DATA[d].id);};
+$('#daily-btn').onclick=()=>{const d=Math.floor(Date.now()/864e5)%DATA.length;dailyId=DATA[d].id;openModal(DATA[d].id);};
 $('#view-toggle').onclick=()=>{$('#gallery').classList.toggle('list-view');$('#view-toggle').textContent=$('#gallery').classList.contains('list-view')?'☰':'⊞';};
 $('#reset-btn').onclick=()=>{state={...state,q:'',group:'',realm:'',iucn:'',fam:'',favOnly:false};$('#search').value='';$('#group-filter').value='';$('#realm-filter').value='';$('#iucn-filter').value='';$('#fav-only-btn').classList.remove('active');apply();buildTaxo();updateCrumb();};
 $('#modal-close').onclick=closeModal;
@@ -296,7 +302,10 @@ document.addEventListener('keydown',e=>{
 
 // ---- init ----
 applyLang();
+const params = new URLSearchParams(location.search);
+const initQ = params.get('q');
+if(initQ){ state.q = initQ; $('#search').value = initQ; }
 apply();
-const initId = +new URLSearchParams(location.search).get('id');
+const initId = +params.get('id');
 if(initId) openModal(initId);
 })();

@@ -12,8 +12,33 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="1001 只飞鸟 · 1001 Birds">
 <meta property="og:description" content="精选世界飞鸟的双语图鉴画廊 · 按目/科分类，含分布、习性与保护等级">
+<meta property="og:url" content="https://xujiann.github.io/1001birds/">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/xujiann/1001birds-img@v1/images/7.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="1001 只飞鸟 · 1001 Birds">
+<meta name="twitter:description" content="精选世界飞鸟的双语图鉴画廊 · 按目/科分类">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/xujiann/1001birds-img@v1/images/7.jpg">
+<link rel="canonical" href="https://xujiann.github.io/1001birds/">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232fa374'/%3E%3Ctext x='16' y='23' font-size='19' text-anchor='middle' fill='white' font-family='Georgia,serif'%3E%F0%9F%95%8A%3C/text%3E%3C/svg%3E">
-<link rel="stylesheet" href="style.css">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' fill='%232fa374'/%3E%3Ctext x='90' y='128' font-size='108' text-anchor='middle' fill='white' font-family='Georgia,serif'%3E%F0%9F%95%8A%3C/text%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.webmanifest">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "1001 只飞鸟 · 1001 Birds",
+  "alternateName": "1001 Birds",
+  "url": "https://xujiann.github.io/1001birds/",
+  "description": "精选世界飞鸟的双语图鉴画廊，按目/科分类，含分布、习性与保护等级。A bilingual field-guide gallery of the world's birds.",
+  "inLanguage": ["zh-CN", "en"],
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": { "@type": "EntryPoint", "urlTemplate": "https://xujiann.github.io/1001birds/?q={search_term_string}" },
+    "query-input": "required name=search_term_string"
+  }
+}
+</script>
+<link rel="stylesheet" href="style.css?v=1">
 </head>
 <body>
 <header class="site-header">
@@ -73,7 +98,7 @@
       </div>
       <div class="modal-info">
         <div class="modal-head">
-          <div class="modal-badges">
+          <div class="modal-badges" id="modal-badges">
             <span class="modal-order-badge" id="modal-order"></span>
             <span class="modal-iucn-badge" id="modal-iucn"></span>
           </div>
@@ -162,7 +187,12 @@
   <button class="footer-about" id="about-btn">关于本站</button>
 </footer>
 
-<script defer src="birds.js"></script>
-<script defer src="app.js"></script>
+<script defer src="birds.js?v=1"></script>
+<script defer src="app.js?v=1"></script>
+<script>
+if ("serviceWorker" in navigator && location.hostname !== "localhost") {
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(()=>{}));
+}
+</script>
 </body>
 </html>
