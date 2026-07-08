@@ -3,7 +3,7 @@
 'use strict';
 const DATA = (window.BIRD_DATA || []).slice();
 // 图片基址：jsDelivr CDN（图床仓库 xujiann/1001birds-img@v2）。本地预览可临时置空。
-const IMG_BASE = 'https://cdn.jsdelivr.net/gh/xujiann/1001birds-img@v2/';
+const IMG_BASE = 'https://cdn.jsdelivr.net/gh/xujiann/1001birds-img@v3/';
 const imgURL = p => IMG_BASE + p;
 const commonsURL = f => f && /^https?:/.test(f) ? f : 'https://commons.wikimedia.org/wiki/Special:FilePath/' + encodeURIComponent(f||'');
 
@@ -365,7 +365,7 @@ if(initId) openModal(initId);
 
 // lazy-load descriptions (74% of data) after core render — refills any open modal on arrival
 setTimeout(function loadDescs(){
-  const s=document.createElement('script'); s.src='descs.js?v=5';
+  const s=document.createElement('script'); s.src='descs.js?v=6';
   s.onload=()=>{ if($('#modal').classList.contains('open')) fillModal(); };
   document.head.appendChild(s);
 }, 200);
