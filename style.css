@@ -181,6 +181,21 @@ select:focus{border-color:var(--accent)}
 .about-stats{display:flex;justify-content:center;gap:1.5rem;flex-wrap:wrap;margin-bottom:1.25rem;padding:0.85rem 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
 .about-stats span{font-size:0.8rem;color:var(--text3)}
 .about-stats strong{display:block;font-size:1.4rem;color:var(--accent2);font-weight:700}
+/* 保护状况总览 */
+.conserv{margin:0 0 1.25rem;text-align:left}
+.conserv-head{font-size:0.82rem;color:var(--text2);line-height:1.6;margin-bottom:0.6rem}
+.conserv-head b{color:var(--accent2);font-variant-numeric:tabular-nums}
+.conserv-head .warn{color:#e8b428}
+.conserv-head .crit{color:#e05a5a}
+.conserv-bar{display:flex;height:22px;border-radius:6px;overflow:hidden;gap:2px;background:var(--bg3)}
+.conserv-seg{min-width:6px;cursor:pointer;transition:filter .2s;position:relative}
+.conserv-seg:hover{filter:brightness(1.18)}
+.conserv-seg.ex{box-shadow:inset 0 0 0 1px rgba(255,255,255,.28)}
+.conserv-legend{display:flex;flex-wrap:wrap;gap:0.45rem 0.9rem;margin-top:0.7rem}
+.conserv-chip{display:inline-flex;align-items:center;gap:6px;font-size:0.72rem;color:var(--text2);cursor:pointer;background:none;border:none;padding:2px 0;transition:color .2s}
+.conserv-chip:hover{color:var(--text)}
+.conserv-sw{width:10px;height:10px;border-radius:3px;flex-shrink:0;border:1px solid rgba(255,255,255,.15)}
+.conserv-chip .n{color:var(--text3);font-variant-numeric:tabular-nums}
 .about-box p{font-size:0.85rem;color:var(--text2);line-height:1.7;text-align:left;margin-bottom:0.85rem}
 .about-gh{display:inline-block;margin-top:0.5rem;padding:0.5rem 1.25rem;background:var(--accent);color:#fff;border-radius:8px;text-decoration:none;font-size:0.85rem;transition:background var(--trans)}
 .about-gh:hover{background:var(--accent2)}

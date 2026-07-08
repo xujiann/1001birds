@@ -285,7 +285,34 @@ window.addEventListener('mouseup',()=>{lb.drag=false;stage.classList.remove('gra
 $('#help-btn').onclick=()=>$('#help-overlay').classList.add('open');
 $('#help-close').onclick=()=>$('#help-overlay').classList.remove('open');
 $('#help-overlay').onclick=e=>{if(e.target===$('#help-overlay'))$('#help-overlay').classList.remove('open');};
-$('#about-btn').onclick=()=>{$('#about-stats').innerHTML=`<span><strong>${DATA.length}</strong>${L[lang].species}</span><span><strong>${new Set(DATA.map(b=>b.order_en)).size}</strong>${L[lang].orders}</span><span><strong>${new Set(DATA.map(b=>b.family_en)).size}</strong>${L[lang].families}</span>`;$('#about-overlay').classList.add('open');};
+$('#about-btn').onclick=()=>{$('#about-stats').innerHTML=`<span><strong>${DATA.length}</strong>${L[lang].species}</span><span><strong>${new Set(DATA.map(b=>b.order_en)).size}</strong>${L[lang].orders}</span><span><strong>${new Set(DATA.map(b=>b.family_en)).size}</strong>${L[lang].families}</span>`;buildConserv();$('#about-overlay').classList.add('open');};
+
+// 保护状况总览：IUCN 分布堆叠条 + 点击筛选
+const IUCN_C = {LC:'#4caf50',NT:'#9cc021',VU:'#e6b428',EN:'#e8783c',CR:'#d83c3c',EW:'#7a3f8c',EX:'#2b2b2b',NA:'#5a6a63'};
+function buildConserv(){
+  const wrap=$('#conserv'); if(!wrap) return;
+  const seq=['LC','NT','VU','EN','CR','EW','EX','NA'];
+  const cnt={}; DATA.forEach(b=>{const k=b.iucn||'NA';cnt[k]=(cnt[k]||0)+1;});
+  const rated=DATA.length-(cnt.NA||0);
+  const threat=(cnt.VU||0)+(cnt.EN||0)+(cnt.CR||0);
+  const gone=(cnt.EX||0)+(cnt.EW||0);
+  const T={zh:{rated:'种已评估保护状况',threat:'受胁',gone:'已灭绝／野外灭绝',lbl:{LC:'无危',NT:'近危',VU:'易危',EN:'濒危',CR:'极危',EW:'野外灭绝',EX:'灭绝',NA:'未评估'}},
+    en:{rated:' species assessed',threat:'threatened',gone:'extinct / EW',lbl:{LC:'Least Concern',NT:'Near Threatened',VU:'Vulnerable',EN:'Endangered',CR:'Critically Endangered',EW:'Extinct in Wild',EX:'Extinct',NA:'Not assessed'}}}[lang];
+  const total=DATA.length;
+  const bar=seq.filter(k=>cnt[k]).map(k=>{
+    const w=(100*cnt[k]/total).toFixed(2);
+    return `<div class="conserv-seg${k==='EX'?' ex':''}" style="flex:${cnt[k]} 0 auto;background:${IUCN_C[k]}" data-iucn="${k==='NA'?'':k}" title="${T.lbl[k]} ${k==='NA'?'':k} · ${cnt[k]} ${lang==='zh'?'种':''} · ${lang==='zh'?'点击筛选':'click to filter'}"></div>`;
+  }).join('');
+  const legend=seq.filter(k=>cnt[k]).map(k=>
+    `<button class="conserv-chip" data-iucn="${k==='NA'?'':k}"><span class="conserv-sw" style="background:${IUCN_C[k]}"></span>${T.lbl[k]}<span class="n">${cnt[k]}</span></button>`).join('');
+  wrap.innerHTML=`<div class="conserv-head">${rated} ${T.rated} · <b class="warn">${threat}</b> ${T.threat}${gone?` · <b class="crit">${gone}</b> ${T.gone}`:''}</div>
+    <div class="conserv-bar">${bar}</div><div class="conserv-legend">${legend}</div>`;
+  wrap.querySelectorAll('[data-iucn]').forEach(elm=>elm.onclick=()=>{
+    const k=elm.getAttribute('data-iucn');
+    state.iucn=k; $('#iucn-filter').value=k;
+    $('#about-overlay').classList.remove('open'); apply(); scrollTop();
+  });
+}
 $('#about-close').onclick=()=>$('#about-overlay').classList.remove('open');
 $('#about-overlay').onclick=e=>{if(e.target===$('#about-overlay'))$('#about-overlay').classList.remove('open');};
 window.addEventListener('scroll',()=>{$('#to-top').classList.toggle('show',window.scrollY>600);});
@@ -312,7 +339,7 @@ if(initId) openModal(initId);
 
 // lazy-load descriptions (74% of data) after core render — refills any open modal on arrival
 setTimeout(function loadDescs(){
-  const s=document.createElement('script'); s.src='descs.js?v=3';
+  const s=document.createElement('script'); s.src='descs.js?v=4';
   s.onload=()=>{ if($('#modal').classList.contains('open')) fillModal(); };
   document.head.appendChild(s);
 }, 200);

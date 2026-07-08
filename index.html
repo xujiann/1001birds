@@ -38,7 +38,7 @@
   }
 }
 </script>
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
 <header class="site-header">
@@ -173,6 +173,7 @@
     <div class="about-logo">🕊</div>
     <h2 id="about-title">关于本站</h2>
     <div class="about-stats" id="about-stats"></div>
+    <div class="conserv" id="conserv"></div>
     <p id="about-intro"></p>
     <p id="about-sources"></p>
     <a class="about-gh" id="about-github" href="https://github.com/xujiann/1001birds" target="_blank" rel="noopener">GitHub 源码</a>
@@ -187,8 +188,8 @@
   <button class="footer-about" id="about-btn">关于本站</button>
 </footer>
 
-<script defer src="birds.js?v=3"></script>
-<script defer src="app.js?v=3"></script>
+<script defer src="birds.js?v=4"></script>
+<script defer src="app.js?v=4"></script>
 <script>
 if ("serviceWorker" in navigator && location.hostname !== "localhost") {
   window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(()=>{}));
