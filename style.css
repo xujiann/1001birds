@@ -66,6 +66,18 @@ select:focus{border-color:var(--accent)}
 .taxo-fam.active{background:var(--accent);border-color:var(--accent);color:#fff}
 .taxo-fam small{opacity:0.7;margin-left:4px}
 
+/* 科视觉索引 */
+.fam-index{max-width:1400px;margin:0 auto;padding:0.5rem 2rem 1rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:1rem}
+.fam-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--card-r);overflow:hidden;cursor:pointer;transition:transform var(--trans),border-color var(--trans),box-shadow var(--trans);animation:cardIn 0.4s ease both}
+.fam-card:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow:0 8px 30px rgba(47,163,116,0.15)}
+.fam-thumb{width:100%;aspect-ratio:4/3;object-fit:cover;background:var(--bg3);display:block;transition:transform 0.4s ease}
+.fam-card:hover .fam-thumb{transform:scale(1.05)}
+.fam-meta{padding:0.55rem 0.7rem 0.65rem}
+.fam-name{font-family:var(--font-serif);font-size:0.92rem;color:#fff;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.fam-latin{font-size:0.66rem;color:var(--text3);font-style:italic;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fam-sub{font-size:0.68rem;color:var(--accent2);margin-top:0.3rem}
+@media(max-width:768px){.fam-index{padding:0.5rem 1rem 1rem;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:0.7rem}}
+
 /* 面包屑 */
 .crumb-bar{max-width:1400px;margin:0 auto;padding:0.4rem 2rem 0.2rem;display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap}
 .crumb-bar .crumb{background:none;border:none;color:var(--accent2);font-size:0.85rem;cursor:pointer;padding:0.3rem 0;display:inline-flex;align-items:center;gap:4px}

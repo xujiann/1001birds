@@ -38,7 +38,7 @@
   }
 }
 </script>
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 <header class="site-header">
@@ -74,6 +74,7 @@
       <option value="iucn">按濒危程度</option>
     </select>
     <button id="taxo-btn" class="btn-outline btn-text">分类树</button>
+    <button id="famindex-btn" class="btn-outline btn-text">科索引</button>
     <button id="fav-only-btn" class="btn-outline btn-text">♥ 收藏</button>
     <button id="daily-btn" class="btn-outline btn-text">每日一鸟</button>
     <button id="random-btn" class="btn-accent">随机一鸟</button>
@@ -83,6 +84,7 @@
 </div>
 
 <div class="taxo-nav" id="taxo-nav" style="display:none"></div>
+<div class="fam-index" id="fam-index" style="display:none"></div>
 <div class="crumb-bar" id="crumb-bar" style="display:none"></div>
 
 <main class="gallery" id="gallery"></main>
@@ -188,8 +190,8 @@
   <button class="footer-about" id="about-btn">关于本站</button>
 </footer>
 
-<script defer src="birds.js?v=4"></script>
-<script defer src="app.js?v=4"></script>
+<script defer src="birds.js?v=5"></script>
+<script defer src="app.js?v=5"></script>
 <script>
 if ("serviceWorker" in navigator && location.hostname !== "localhost") {
   window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(()=>{}));

@@ -14,7 +14,7 @@ const PAGE = 60;
 const L = {
   zh:{sub:' 只飞鸟', species:'种', orders:'目', families:'科', search:'搜索鸟名、学名、目/科…',
     allGroup:'全部类群', allRealm:'全部地理界', allIucn:'全部保护等级',
-    taxo:'分类树', fav:'♥ 收藏', daily:'每日一鸟', random:'随机一鸟',
+    taxo:'分类树', famidx:'科索引', fav:'♥ 收藏', daily:'每日一鸟', random:'随机一鸟',
     order:'目', family:'科', realm:'地理分布', iucn:'保护等级', famLink:'查看该科全部鸟类 →',
     prev:'← 上一种', next:'下一种 →', nores:'未找到符合条件的鸟类', reset:'重置筛选',
     footer:'精选世界1001种飞鸟 · 数据来自 Wikidata / Wikimedia Commons / Wikipedia',
@@ -23,7 +23,7 @@ const L = {
     aboutSources:'分类与元数据来自 Wikidata，图片来自 Wikimedia Commons，简介来自 Wikipedia。每张图片均保留原作者署名与许可。'},
   en:{sub:' Birds', species:'species', orders:'orders', families:'families', search:'Search name, sci. name, order/family…',
     allGroup:'All groups', allRealm:'All realms', allIucn:'All statuses',
-    taxo:'Taxonomy', fav:'♥ Saved', daily:'Bird of the day', random:'Random bird',
+    taxo:'Taxonomy', famidx:'Families', fav:'♥ Saved', daily:'Bird of the day', random:'Random bird',
     order:'Order', family:'Family', realm:'Distribution', iucn:'Conservation', famLink:'See all birds in this family →',
     prev:'← Prev', next:'Next →', nores:'No birds match your filters', reset:'Reset',
     footer:'A curated gallery of the world\'s birds · Data from Wikidata / Wikimedia Commons / Wikipedia',
@@ -42,6 +42,7 @@ let state = { q:'', group:'', realm:'', iucn:'', fam:'', sort:'default', favOnly
 let filtered = DATA.slice();
 let modalIdx = -1;
 let dailyId = -1;
+let famIndexOpen = false;
 
 const $ = s => document.querySelector(s);
 const el = (tag,cls,html)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e;};
@@ -188,6 +189,30 @@ function applyLB(){const img=$('#lb-img');img.style.transform=`translate(${lb.x}
 function closeLightbox(){$('#lightbox').classList.remove('open');}
 
 // ---- taxonomy nav ----
+// ---- family visual index ----
+function toggleFamIndex(show){
+  famIndexOpen = show;
+  $('#famindex-btn').classList.toggle('active', show);
+  $('#fam-index').style.display = show ? 'grid' : 'none';
+  $('#gallery').style.display = show ? 'none' : '';
+  $('#pagination').style.display = show ? 'none' : '';
+  if(show){ state.taxoOpen=false; $('#taxo-nav').style.display='none'; $('#taxo-btn').classList.remove('active'); buildFamIndex(); scrollTop(); }
+}
+function buildFamIndex(){
+  const idx=$('#fam-index'); const fams={};
+  DATA.forEach(b=>{ (fams[b.family_en]=fams[b.family_en]||{en:b.family_en,zh:b.family_zh,order_zh:b.order_zh,order_en:b.order_en,items:[]}).items.push(b); });
+  const list=Object.values(fams).sort((a,b)=>DATA.findIndex(x=>x.family_en===a.en)-DATA.findIndex(x=>x.family_en===b.en));
+  idx.innerHTML='';
+  list.forEach(f=>{
+    const cover=f.items[0];
+    const card=el('div','fam-card');
+    card.innerHTML=`<img class="fam-thumb" loading="lazy" src="${imgURL(cover.thumb)}" alt="${lang==='zh'?f.zh:f.en}">`+
+      `<div class="fam-meta"><div class="fam-name">${lang==='zh'?f.zh:f.en}</div><div class="fam-latin">${f.en}</div>`+
+      `<div class="fam-sub">${lang==='zh'?f.order_zh:f.order_en} · ${f.items.length}${lang==='zh'?' 种':''}</div></div>`;
+    card.onclick=()=>{ state.fam=f.en; toggleFamIndex(false); state.taxoOpen=true; $('#taxo-nav').style.display='block'; apply(); buildTaxo(); updateCrumb(); scrollTop(); };
+    idx.appendChild(card);
+  });
+}
 function buildTaxo(){
   const nav=$('#taxo-nav'); nav.innerHTML='';
   const orders={};
@@ -236,7 +261,7 @@ function applyLang(){
   $('#t-sub').textContent=L[lang].sub; $('#t-species').textContent=L[lang].species;
   $('#t-orders').textContent=L[lang].orders; $('#t-families').textContent=L[lang].families;
   $('#search').placeholder=L[lang].search;
-  $('#taxo-btn').textContent=L[lang].taxo; $('#fav-only-btn').innerHTML=L[lang].fav;
+  $('#taxo-btn').textContent=L[lang].taxo; $('#famindex-btn').textContent=L[lang].famidx; $('#fav-only-btn').innerHTML=L[lang].fav;
   $('#daily-btn').textContent=L[lang].daily; $('#random-btn').textContent=L[lang].random;
   $('#l-order').textContent=L[lang].order; $('#l-family').textContent=L[lang].family;
   $('#l-realm').textContent=L[lang].realm; $('#l-iucn').textContent=L[lang].iucn;
@@ -244,7 +269,7 @@ function applyLang(){
   $('#t-noresults').textContent=L[lang].nores; $('#reset-btn').textContent=L[lang].reset;
   $('#t-footer').textContent=L[lang].footer; $('#t-original').textContent=L[lang].original;
   $('#about-intro').textContent=L[lang].aboutIntro; $('#about-sources').textContent=L[lang].aboutSources;
-  fillSelects(); buildTaxo(); updateCrumb();
+  fillSelects(); buildTaxo(); updateCrumb(); if(famIndexOpen) buildFamIndex();
   $('#order-count').textContent=new Set(DATA.map(b=>b.order_en)).size;
   $('#family-count').textContent=new Set(DATA.map(b=>b.family_en)).size;
 }
@@ -258,7 +283,8 @@ $('#group-filter').onchange=e=>{state.group=e.target.value;apply();};
 $('#realm-filter').onchange=e=>{state.realm=e.target.value;apply();};
 $('#iucn-filter').onchange=e=>{state.iucn=e.target.value;apply();};
 $('#sort-filter').onchange=e=>{state.sort=e.target.value;apply();};
-$('#taxo-btn').onclick=()=>{state.taxoOpen=!state.taxoOpen;$('#taxo-nav').style.display=state.taxoOpen?'block':'none';$('#taxo-btn').classList.toggle('active',state.taxoOpen);if(state.taxoOpen)buildTaxo();};
+$('#taxo-btn').onclick=()=>{if(famIndexOpen)toggleFamIndex(false);state.taxoOpen=!state.taxoOpen;$('#taxo-nav').style.display=state.taxoOpen?'block':'none';$('#taxo-btn').classList.toggle('active',state.taxoOpen);if(state.taxoOpen)buildTaxo();};
+$('#famindex-btn').onclick=()=>toggleFamIndex(!famIndexOpen);
 $('#fav-only-btn').onclick=()=>{state.favOnly=!state.favOnly;$('#fav-only-btn').classList.toggle('active',state.favOnly);apply();};
 $('#random-btn').onclick=()=>{const b=DATA[Math.floor(Math.random()*DATA.length)];openModal(b.id);};
 $('#daily-btn').onclick=()=>{const d=Math.floor(Date.now()/864e5)%DATA.length;dailyId=DATA[d].id;openModal(DATA[d].id);};
@@ -339,7 +365,7 @@ if(initId) openModal(initId);
 
 // lazy-load descriptions (74% of data) after core render — refills any open modal on arrival
 setTimeout(function loadDescs(){
-  const s=document.createElement('script'); s.src='descs.js?v=4';
+  const s=document.createElement('script'); s.src='descs.js?v=5';
   s.onload=()=>{ if($('#modal').classList.contains('open')) fillModal(); };
   document.head.appendChild(s);
 }, 200);
