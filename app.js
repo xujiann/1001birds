@@ -365,7 +365,7 @@ if(initId) openModal(initId);
 
 // lazy-load descriptions (74% of data) after core render — refills any open modal on arrival
 setTimeout(function loadDescs(){
-  const s=document.createElement('script'); s.src='descs.js?v=6';
+  const s=document.createElement('script'); s.src='descs.js?v=7';
   s.onload=()=>{ if($('#modal').classList.contains('open')) fillModal(); };
   document.head.appendChild(s);
 }, 200);
