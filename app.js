@@ -14,8 +14,8 @@ const PAGE = 60;
 const L = {
   zh:{sub:' 只飞鸟', species:'种', orders:'目', families:'科', search:'搜索鸟名、学名、目/科…',
     allGroup:'全部类群', allRealm:'全部地理界', allIucn:'全部保护等级',
-    taxo:'分类树', famidx:'科索引', fav:'♥ 收藏', daily:'每日一鸟', random:'随机一鸟',
-    order:'目', family:'科', realm:'地理分布', iucn:'保护等级', famLink:'查看该科全部鸟类 →',
+    taxo:'分类树', famidx:'科索引', threat:'⚠ 受胁', fav:'♥ 收藏', daily:'每日一鸟', random:'随机一鸟',
+    order:'目', family:'科', realm:'类群', iucn:'保护等级', famLink:'查看该科全部鸟类 →',
     prev:'← 上一种', next:'下一种 →', nores:'未找到符合条件的鸟类', reset:'重置筛选',
     footer:'精选世界1001种飞鸟 · 数据来自 Wikidata / Wikimedia Commons / Wikipedia',
     original:'原图', credit:'图片', source:'来源', of:' / 共 ',
@@ -23,8 +23,8 @@ const L = {
     aboutSources:'分类与元数据来自 Wikidata，图片来自 Wikimedia Commons，简介来自 Wikipedia。每张图片均保留原作者署名与许可。'},
   en:{sub:' Birds', species:'species', orders:'orders', families:'families', search:'Search name, sci. name, order/family…',
     allGroup:'All groups', allRealm:'All realms', allIucn:'All statuses',
-    taxo:'Taxonomy', famidx:'Families', fav:'♥ Saved', daily:'Bird of the day', random:'Random bird',
-    order:'Order', family:'Family', realm:'Distribution', iucn:'Conservation', famLink:'See all birds in this family →',
+    taxo:'Taxonomy', famidx:'Families', threat:'⚠ At risk', fav:'♥ Saved', daily:'Bird of the day', random:'Random bird',
+    order:'Order', family:'Family', realm:'Group', iucn:'Conservation', famLink:'See all birds in this family →',
     prev:'← Prev', next:'Next →', nores:'No birds match your filters', reset:'Reset',
     footer:'A curated gallery of the world\'s birds · Data from Wikidata / Wikimedia Commons / Wikipedia',
     original:'Original', credit:'Image', source:'Source', of:' / of ',
@@ -38,7 +38,8 @@ const IUCN_LABEL = {zh:{LC:'无危',NT:'近危',VU:'易危',EN:'濒危',CR:'极�
 // ---- state ----
 let favs = new Set(JSON.parse(localStorage.getItem('birds_favs')||'[]'));
 const saveFavs = () => localStorage.setItem('birds_favs', JSON.stringify([...favs]));
-let state = { q:'', group:'', realm:'', iucn:'', fam:'', sort:'default', favOnly:false, page:0, taxoOpen:false, list:'' };
+let state = { q:'', group:'', realm:'', iucn:'', fam:'', sort:'default', favOnly:false, threatened:false, page:0, taxoOpen:false, list:'' };
+const THREAT = new Set(['VU','EN','CR','EW','EX']);
 let filtered = DATA.slice();
 let modalIdx = -1;
 let dailyId = -1;
@@ -55,8 +56,8 @@ function apply(){
   const q = state.q.trim().toLowerCase();
   filtered = DATA.filter(b=>{
     if(state.favOnly && !favs.has(b.id)) return false;
+    if(state.threatened && !THREAT.has(b.iucn)) return false;
     if(state.group && b.group!==state.group) return false;
-    if(state.realm && b.realm!==state.realm) return false;
     if(state.iucn && b.iucn!==state.iucn) return false;
     if(state.fam && b.family_en!==state.fam) return false;
     if(q){
@@ -161,7 +162,7 @@ function fillModal(){
   $('#modal-en').textContent = lang==='zh'? b.en : '';
   $('#modal-order-full').textContent = b.order_zh+' '+b.order_en;
   $('#modal-family').textContent = b.family_zh+' '+b.family_en;
-  $('#modal-realm').textContent = [b.realm, b.group].filter(Boolean).join(' · ') || '—';
+  $('#modal-realm').textContent = [b.group, b.realm].filter(Boolean).join(' · ') || '—';
   $('#modal-iucn-full').textContent = b.iucn ? b.iucn+' '+(IUCN_LABEL[lang][b.iucn]||'') : '—';
   const dd = (window.BIRD_DESCS && window.BIRD_DESCS[b.id]) || ['',''];
   $('#modal-desc').textContent = (lang==='zh'? (dd[0]||dd[1]) : (dd[1]||dd[0])) || (window.BIRD_DESCS ? '' : '…');
@@ -247,10 +248,8 @@ function updateCrumb(){
 // ---- filters population ----
 function fillSelects(){
   const groups=[...new Set(DATA.map(b=>b.group))].filter(Boolean);
-  const realms=[...new Set(DATA.map(b=>b.realm))].filter(Boolean);
   const iucns=['EX','EW','CR','EN','VU','NT','LC'].filter(k=>DATA.some(b=>b.iucn===k));
   $('#group-filter').innerHTML=`<option value="">${L[lang].allGroup}</option>`+groups.map(g=>`<option value="${g}">${g}</option>`).join('');
-  $('#realm-filter').innerHTML=`<option value="">${L[lang].allRealm}</option>`+realms.map(r=>`<option value="${r}">${r}</option>`).join('');
   $('#iucn-filter').innerHTML=`<option value="">${L[lang].allIucn}</option>`+iucns.map(k=>`<option value="${k}">${k} ${IUCN_LABEL[lang][k]}</option>`).join('');
 }
 
@@ -261,7 +260,7 @@ function applyLang(){
   $('#t-sub').textContent=L[lang].sub; $('#t-species').textContent=L[lang].species;
   $('#t-orders').textContent=L[lang].orders; $('#t-families').textContent=L[lang].families;
   $('#search').placeholder=L[lang].search;
-  $('#taxo-btn').textContent=L[lang].taxo; $('#famindex-btn').textContent=L[lang].famidx; $('#fav-only-btn').innerHTML=L[lang].fav;
+  $('#taxo-btn').textContent=L[lang].taxo; $('#famindex-btn').textContent=L[lang].famidx; $('#threat-btn').textContent=L[lang].threat; $('#fav-only-btn').innerHTML=L[lang].fav;
   $('#daily-btn').textContent=L[lang].daily; $('#random-btn').textContent=L[lang].random;
   $('#l-order').textContent=L[lang].order; $('#l-family').textContent=L[lang].family;
   $('#l-realm').textContent=L[lang].realm; $('#l-iucn').textContent=L[lang].iucn;
@@ -280,7 +279,7 @@ $('#lang-toggle').onclick=()=>{lang=lang==='zh'?'en':'zh';localStorage.setItem('
 $('#search').oninput=e=>{state.q=e.target.value;apply();};
 $('#clear-search').onclick=()=>{state.q='';$('#search').value='';apply();};
 $('#group-filter').onchange=e=>{state.group=e.target.value;apply();};
-$('#realm-filter').onchange=e=>{state.realm=e.target.value;apply();};
+$('#threat-btn').onclick=()=>{state.threatened=!state.threatened;$('#threat-btn').classList.toggle('active',state.threatened);apply();};
 $('#iucn-filter').onchange=e=>{state.iucn=e.target.value;apply();};
 $('#sort-filter').onchange=e=>{state.sort=e.target.value;apply();};
 $('#taxo-btn').onclick=()=>{if(famIndexOpen)toggleFamIndex(false);state.taxoOpen=!state.taxoOpen;$('#taxo-nav').style.display=state.taxoOpen?'block':'none';$('#taxo-btn').classList.toggle('active',state.taxoOpen);if(state.taxoOpen)buildTaxo();};
@@ -289,7 +288,7 @@ $('#fav-only-btn').onclick=()=>{state.favOnly=!state.favOnly;$('#fav-only-btn').
 $('#random-btn').onclick=()=>{const b=DATA[Math.floor(Math.random()*DATA.length)];openModal(b.id);};
 $('#daily-btn').onclick=()=>{const d=Math.floor(Date.now()/864e5)%DATA.length;dailyId=DATA[d].id;openModal(DATA[d].id);};
 $('#view-toggle').onclick=()=>{$('#gallery').classList.toggle('list-view');$('#view-toggle').textContent=$('#gallery').classList.contains('list-view')?'☰':'⊞';};
-$('#reset-btn').onclick=()=>{state={...state,q:'',group:'',realm:'',iucn:'',fam:'',favOnly:false};$('#search').value='';$('#group-filter').value='';$('#realm-filter').value='';$('#iucn-filter').value='';$('#fav-only-btn').classList.remove('active');apply();buildTaxo();updateCrumb();};
+$('#reset-btn').onclick=()=>{state={...state,q:'',group:'',iucn:'',fam:'',favOnly:false,threatened:false};$('#search').value='';$('#group-filter').value='';$('#iucn-filter').value='';$('#fav-only-btn').classList.remove('active');$('#threat-btn').classList.remove('active');apply();buildTaxo();updateCrumb();};
 $('#modal-close').onclick=closeModal;
 $('#modal').onclick=e=>{if(e.target===$('#modal'))closeModal();};
 $('#prev-item').onclick=()=>navModal(-1);
@@ -365,7 +364,7 @@ if(initId) openModal(initId);
 
 // lazy-load descriptions (74% of data) after core render — refills any open modal on arrival
 setTimeout(function loadDescs(){
-  const s=document.createElement('script'); s.src='descs.js?v=7';
+  const s=document.createElement('script'); s.src='descs.js?v=8';
   s.onload=()=>{ if($('#modal').classList.contains('open')) fillModal(); };
   document.head.appendChild(s);
 }, 200);

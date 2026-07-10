@@ -38,7 +38,7 @@
   }
 }
 </script>
-<link rel="stylesheet" href="style.css?v=7">
+<link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
 <header class="site-header">
@@ -66,7 +66,6 @@
   </div>
   <div class="filter-row">
     <select id="group-filter"><option value="">全部类群</option></select>
-    <select id="realm-filter"><option value="">全部地理界</option></select>
     <select id="iucn-filter"><option value="">全部保护等级</option></select>
     <select id="sort-filter" aria-label="排序">
       <option value="default">默认（分类顺序）</option>
@@ -75,6 +74,7 @@
     </select>
     <button id="taxo-btn" class="btn-outline btn-text">分类树</button>
     <button id="famindex-btn" class="btn-outline btn-text">科索引</button>
+    <button id="threat-btn" class="btn-outline btn-text">⚠ 受胁</button>
     <button id="fav-only-btn" class="btn-outline btn-text">♥ 收藏</button>
     <button id="daily-btn" class="btn-outline btn-text">每日一鸟</button>
     <button id="random-btn" class="btn-accent">随机一鸟</button>
@@ -190,12 +190,15 @@
   <button class="footer-about" id="about-btn">关于本站</button>
 </footer>
 
-<script defer src="birds.js?v=7"></script>
-<script defer src="app.js?v=7"></script>
+<script defer src="birds.js?v=8"></script>
+<script defer src="app.js?v=8"></script>
 <script>
 if ("serviceWorker" in navigator && location.hostname !== "localhost") {
   window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(()=>{}));
 }
 </script>
+<!-- hub-nav: back to 1001×1001 -->
+<a id="hub-link" href="https://xujiann.github.io/" title="返回 1001 × 1001 · 万物收藏" aria-label="返回 1001×1001 万物收藏">1001 × 1001</a>
+<style>#hub-link{position:fixed;left:12px;bottom:max(12px,env(safe-area-inset-bottom));z-index:120;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:100px;background:rgba(18,15,28,.85);border:1px solid rgba(255,255,255,.14);color:#e8e8f0;font:600 12.5px/1 system-ui,-apple-system,"Segoe UI","Noto Sans SC",sans-serif;text-decoration:none;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 4px 16px rgba(0,0,0,.35);transition:transform .2s,border-color .2s,background .2s}#hub-link::before{content:"\2756";color:#d9b26a;font-size:13px}#hub-link:hover{transform:translateY(-2px);border-color:rgba(217,178,106,.6);background:rgba(28,22,42,.95)}@media(max-width:640px){#hub-link{font-size:11.5px;padding:6px 11px;left:10px}}</style>
 </body>
 </html>
