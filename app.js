@@ -47,6 +47,16 @@ let famIndexOpen = false;
 
 const $ = s => document.querySelector(s);
 const el = (tag,cls,html)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e;};
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// 每图署名（CC 图片要求署名作者+许可）：credits.js 懒加载后填充
+function creditHTML(b){
+  const c = (window.BIRD_CREDITS||{})[b.id] || null;
+  const parts = [];
+  if(c && c.a) parts.push(esc(c.a));
+  if(c && c.l) parts.push(c.u ? `<a href="${esc(c.u)}" target="_blank" rel="noopener">${esc(c.l)}</a>` : esc(c.l));
+  if(b.file) parts.push(`<a href="${commonsURL(b.file)}" target="_blank" rel="noopener">Wikimedia Commons</a>`);
+  return parts.length ? `<span class="mc-label">${L[lang].credit}${lang==='zh'?'：':': '}</span>${parts.join(' · ')}` : '';
+}
 const nm = b => lang==='zh' ? (b.zh||b.en) : (b.en||b.zh);
 const orderName = b => lang==='zh' ? b.order_zh : b.order_en;
 const familyName = b => lang==='zh' ? b.family_zh : b.family_en;
@@ -167,7 +177,7 @@ function fillModal(){
   const dd = (window.BIRD_DESCS && window.BIRD_DESCS[b.id]) || ['',''];
   $('#modal-desc').textContent = (lang==='zh'? (dd[0]||dd[1]) : (dd[1]||dd[0])) || (window.BIRD_DESCS ? '' : '…');
   const fav = $('#modal-fav'); fav.className='modal-fav'+(favs.has(b.id)?' on':''); fav.textContent = favs.has(b.id)?'♥ 已收藏':'♡ 收藏';
-  $('#modal-credit').innerHTML = b.file? `${L[lang].source}: <a href="${commonsURL(b.file)}" target="_blank" rel="noopener">Wikimedia Commons</a>`:'';
+  $('#modal-credit').innerHTML = creditHTML(b);
   $('#modal-num').textContent = (modalIdx+1)+L[lang].of+filtered.length;
   $('#modal-taxo-link').textContent = L[lang].famLink;
 }
@@ -180,7 +190,8 @@ function openLightbox(b){
   const img=$('#lb-img'); $('#lb-spinner').classList.add('show');
   img.src=''; img.src=commonsURL(b.file)||imgURL(b.img);
   img.onload=()=>$('#lb-spinner').classList.remove('show');
-  $('#lb-caption').textContent = nm(b)+' · '+b.sci;
+  const lc = (window.BIRD_CREDITS||{})[b.id];
+  $('#lb-caption').textContent = nm(b)+' · '+b.sci + (lc && lc.a ? ` · © ${lc.a}${lc.l?' / '+lc.l:''}` : '');
   $('#lb-original').href = commonsURL(b.file)||imgURL(b.img);
   lb={scale:1,x:0,y:0,drag:false}; applyLB();
   $('#lightbox').classList.add('open');
@@ -362,10 +373,13 @@ apply();
 const initId = +params.get('id');
 if(initId) openModal(initId);
 
-// lazy-load descriptions (74% of data) after core render — refills any open modal on arrival
-setTimeout(function loadDescs(){
-  const s=document.createElement('script'); s.src='descs.js?v=8';
-  s.onload=()=>{ if($('#modal').classList.contains('open')) fillModal(); };
-  document.head.appendChild(s);
+// lazy-load non-critical data after core render (descriptions = 74% of payload; per-image credits)
+// — each refills an open modal on arrival
+setTimeout(function loadExtras(){
+  for(const src of ['descs.js?v=9','credits.js?v=9']){
+    const s=document.createElement('script'); s.src=src;
+    s.onload=()=>{ if($('#modal').classList.contains('open')) fillModal(); };
+    document.head.appendChild(s);
+  }
 }, 200);
 })();
