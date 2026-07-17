@@ -398,7 +398,7 @@ if(initId) openModal(initId);
 // lazy-load non-critical data after core render (descriptions = 74% of payload; per-image credits)
 // — each refills an open modal on arrival
 setTimeout(function loadExtras(){
-  for(const src of ['descs.js?v=10','credits.js?v=10','songs.js?v=10']){
+  for(const src of ['descs.js?v=11','credits.js?v=11','songs.js?v=11']){
     const s=document.createElement('script'); s.src=src;
     s.onload=()=>{ if($('#modal').classList.contains('open')) fillModal(); };
     document.head.appendChild(s);
