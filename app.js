@@ -18,7 +18,8 @@ const L = {
     order:'目', family:'科', realm:'类群', iucn:'保护等级', famLink:'查看该科全部鸟类 →',
     prev:'← 上一种', next:'下一种 →', nores:'未找到符合条件的鸟类', reset:'重置筛选',
     footer:'精选世界1001种飞鸟 · 数据来自 Wikidata / Wikimedia Commons / Wikipedia',
-    original:'原图', credit:'图片', source:'来源', of:' / 共 ',
+    original:'原图', credit:'图片', source:'来源', of:' / 共 ', rec:'录音',
+    songPlay:'▶ 鸣声', songPause:'⏸ 暂停', songLoad:'⋯ 加载中', songErr:'✕ 无法播放',
     aboutIntro:'「1001 只飞鸟」精选世界各地具代表性的鸟类，按严谨的目/科分类编排，兼顾图鉴的信息与画廊的美感。现已收录 1001 种，覆盖 40+ 目、150+ 科。',
     aboutSources:'分类与元数据来自 Wikidata，图片来自 Wikimedia Commons，简介来自 Wikipedia。每张图片均保留原作者署名与许可。'},
   en:{sub:' Birds', species:'species', orders:'orders', families:'families', search:'Search name, sci. name, order/family…',
@@ -27,7 +28,8 @@ const L = {
     order:'Order', family:'Family', realm:'Group', iucn:'Conservation', famLink:'See all birds in this family →',
     prev:'← Prev', next:'Next →', nores:'No birds match your filters', reset:'Reset',
     footer:'A curated gallery of the world\'s birds · Data from Wikidata / Wikimedia Commons / Wikipedia',
-    original:'Original', credit:'Image', source:'Source', of:' / of ',
+    original:'Original', credit:'Image', source:'Source', of:' / of ', rec:'Recording',
+    songPlay:'▶ Call', songPause:'⏸ Pause', songLoad:'⋯ Loading', songErr:'✕ Cannot play',
     aboutIntro:'“1001 Birds” is a curated, bilingual field-guide gallery of representative birds worldwide, organised by strict order/family taxonomy. It now holds 1001 species across 40+ orders and 150+ families.',
     aboutSources:'Taxonomy and metadata from Wikidata, images from Wikimedia Commons, summaries from Wikipedia. Each image keeps its author attribution and licence.'},
 };
@@ -148,6 +150,25 @@ function toggleFav(id,btn){
   if(state.favOnly) apply();
 }
 
+// ---- bird call playback (streamed from Commons, no download) ----
+let songAudio = null, songPlaying = false;
+function stopSong(){ if(songAudio){ songAudio.pause(); } songPlaying=false; const b=$('#modal-song'); if(b){ b.textContent=L[lang].songPlay; b.classList.remove('playing'); } }
+function setupSong(b){
+  const wrap=$('#modal-song-wrap'), btn=$('#modal-song'); if(!wrap) return;
+  const s = (window.BIRD_SONGS||{})[b.id];
+  stopSong();
+  if(!s){ wrap.style.display='none'; return; }
+  wrap.style.display='flex';
+  $('#song-credit').textContent = s.a ? `${L[lang].rec}：${s.a}${s.l?' · '+s.l:''}` : '';
+  btn.onclick=()=>{
+    if(!songAudio){ songAudio=new Audio(); songAudio.onended=stopSong; }
+    if(songPlaying){ stopSong(); return; }
+    songAudio.src = commonsURL(s.f); btn.textContent=L[lang].songLoad;
+    songAudio.play().then(()=>{ songPlaying=true; btn.textContent=L[lang].songPause; btn.classList.add('playing'); })
+      .catch(()=>{ btn.textContent=L[lang].songErr; setTimeout(()=>{btn.textContent=L[lang].songPlay;},1800); });
+  };
+}
+
 // ---- modal ----
 function openModal(id){
   const idx = filtered.findIndex(b=>b.id===id);
@@ -178,11 +199,12 @@ function fillModal(){
   $('#modal-desc').textContent = (lang==='zh'? (dd[0]||dd[1]) : (dd[1]||dd[0])) || (window.BIRD_DESCS ? '' : '…');
   const fav = $('#modal-fav'); fav.className='modal-fav'+(favs.has(b.id)?' on':''); fav.textContent = favs.has(b.id)?'♥ 已收藏':'♡ 收藏';
   $('#modal-credit').innerHTML = creditHTML(b);
+  setupSong(b);
   $('#modal-num').textContent = (modalIdx+1)+L[lang].of+filtered.length;
   $('#modal-taxo-link').textContent = L[lang].famLink;
 }
 function navModal(d){ if(!filtered.length)return; modalIdx=(modalIdx+d+filtered.length)%filtered.length; fillModal(); history.replaceState(null,'','?id='+filtered[modalIdx].id); }
-function closeModal(){ $('#modal').classList.remove('open'); history.replaceState(null,'',location.pathname); }
+function closeModal(){ stopSong(); $('#modal').classList.remove('open'); history.replaceState(null,'',location.pathname); }
 
 // ---- lightbox ----
 let lb={scale:1,x:0,y:0,drag:false,sx:0,sy:0};
@@ -376,7 +398,7 @@ if(initId) openModal(initId);
 // lazy-load non-critical data after core render (descriptions = 74% of payload; per-image credits)
 // — each refills an open modal on arrival
 setTimeout(function loadExtras(){
-  for(const src of ['descs.js?v=9','credits.js?v=9']){
+  for(const src of ['descs.js?v=10','credits.js?v=10','songs.js?v=10']){
     const s=document.createElement('script'); s.src=src;
     s.onload=()=>{ if($('#modal').classList.contains('open')) fillModal(); };
     document.head.appendChild(s);

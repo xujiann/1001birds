@@ -163,6 +163,12 @@ select:focus{border-color:var(--accent)}
 .modal-en{font-size:0.9rem;color:var(--text2)}
 .modal-taxo-link{display:inline-block;margin-top:0.1rem;background:none;border:none;padding:0;color:var(--accent2);font-size:0.82rem;cursor:pointer;text-align:left;transition:opacity var(--trans)}
 .modal-taxo-link:hover{text-decoration:underline;opacity:0.85}
+/* 鸣声播放 */
+.modal-song-wrap{display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;margin-top:0.15rem}
+.modal-song{background:rgba(47,163,116,0.14);border:1px solid var(--accent);border-radius:20px;color:var(--accent2);font-size:0.8rem;padding:0.32rem 0.9rem;cursor:pointer;transition:all var(--trans);white-space:nowrap;flex-shrink:0}
+.modal-song:hover{background:rgba(47,163,116,0.24);color:#fff}
+.modal-song.playing{background:var(--accent);color:#fff}
+.song-credit{font-size:0.7rem;color:var(--text3);line-height:1.4}
 .modal-meta{display:grid;grid-template-columns:auto 1fr;gap:0.35rem 1rem;font-size:0.82rem;margin-top:0.25rem}
 .modal-meta dt{color:var(--text3);font-weight:500}
 .modal-meta dd{color:var(--text2)}

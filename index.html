@@ -38,7 +38,7 @@
   }
 }
 </script>
-<link rel="stylesheet" href="style.css?v=9">
+<link rel="stylesheet" href="style.css?v=10">
 </head>
 <body>
 <header class="site-header">
@@ -113,6 +113,10 @@
         <p class="modal-sci" id="modal-sci"></p>
         <p class="modal-en" id="modal-en"></p>
         <button class="modal-taxo-link" id="modal-taxo-link">查看该科全部鸟类 →</button>
+        <div class="modal-song-wrap" id="modal-song-wrap" style="display:none">
+          <button class="modal-song" id="modal-song">▶ 鸣声</button>
+          <span class="song-credit" id="song-credit"></span>
+        </div>
         <dl class="modal-meta">
           <dt id="l-order">目</dt><dd id="modal-order-full"></dd>
           <dt id="l-family">科</dt><dd id="modal-family"></dd>
@@ -190,8 +194,8 @@
   <button class="footer-about" id="about-btn">关于本站</button>
 </footer>
 
-<script defer src="birds.js?v=9"></script>
-<script defer src="app.js?v=9"></script>
+<script defer src="birds.js?v=10"></script>
+<script defer src="app.js?v=10"></script>
 <script>
 if ("serviceWorker" in navigator && location.hostname !== "localhost") {
   window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(()=>{}));
