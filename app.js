@@ -3,7 +3,7 @@
 'use strict';
 const DATA = (window.BIRD_DATA || []).slice();
 // 图片基址：jsDelivr CDN（图床仓库 xujiann/1001birds-img@v2）。本地预览可临时置空。
-const IMG_BASE = 'https://cdn.jsdelivr.net/gh/xujiann/1001birds-img@v3/';
+const IMG_BASE = 'https://cdn.jsdelivr.net/gh/xujiann/1001birds-img@v4/';
 const imgURL = p => IMG_BASE + p;
 const commonsURL = f => f && /^https?:/.test(f) ? f : 'https://commons.wikimedia.org/wiki/Special:FilePath/' + encodeURIComponent(f||'');
 
@@ -293,7 +293,7 @@ function switchMode(mode){
   if(mode==='all' && !ALLREC){
     if(window.BIRD_ALL){ ALLREC=buildAllRecords(); go(); return; }
     if(allLoading) return; allLoading=true; $('#mode-btn').textContent=L[lang].modeLoad;
-    const s=document.createElement('script'); s.src='all.js?v=15';
+    const s=document.createElement('script'); s.src='all.js?v=16';
     s.onload=()=>{ ALLREC=buildAllRecords(); allLoading=false; go(); };
     s.onerror=()=>{ allLoading=false; $('#mode-btn').textContent=L[lang].modeAll; };
     document.head.appendChild(s);
@@ -487,7 +487,7 @@ if(initId) openModal(initId);
 // lazy-load non-critical data after core render (descriptions = 74% of payload; per-image credits)
 // — each refills an open modal on arrival
 setTimeout(function loadExtras(){
-  for(const src of ['descs.js?v=15','credits.js?v=15','songs.js?v=15']){
+  for(const src of ['descs.js?v=16','credits.js?v=16','songs.js?v=16']){
     const s=document.createElement('script'); s.src=src;
     s.onload=()=>{ if($('#modal').classList.contains('open')) fillModal(); };
     document.head.appendChild(s);
