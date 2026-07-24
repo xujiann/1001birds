@@ -292,7 +292,7 @@ function switchMode(mode){
   if(mode==='all' && !ALLREC){
     if(window.BIRD_ALL){ ALLREC=buildAllRecords(); go(); return; }
     if(allLoading) return; allLoading=true; $('#mode-btn').textContent=L[lang].modeLoad;
-    const s=document.createElement('script'); s.src='all.js?v=13';
+    const s=document.createElement('script'); s.src='all.js?v=14';
     s.onload=()=>{ ALLREC=buildAllRecords(); allLoading=false; go(); };
     s.onerror=()=>{ allLoading=false; $('#mode-btn').textContent=L[lang].modeAll; };
     document.head.appendChild(s);
@@ -486,7 +486,7 @@ if(initId) openModal(initId);
 // lazy-load non-critical data after core render (descriptions = 74% of payload; per-image credits)
 // — each refills an open modal on arrival
 setTimeout(function loadExtras(){
-  for(const src of ['descs.js?v=13','credits.js?v=13','songs.js?v=13']){
+  for(const src of ['descs.js?v=14','credits.js?v=14','songs.js?v=14']){
     const s=document.createElement('script'); s.src=src;
     s.onload=()=>{ if($('#modal').classList.contains('open')) fillModal(); };
     document.head.appendChild(s);
