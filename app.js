@@ -49,8 +49,8 @@ const THREAT = new Set(['VU','EN','CR','EW','EX']);
 // 数据源：旗舰 1001（DATA，富媒体）或全量 ~11,161 IOC 核对表（ALLREC，懒构建）
 let SRC = DATA, MODE = 'flag', ALLREC = null;
 const commonsThumb = (file,w) => 'https://commons.wikimedia.org/wiki/Special:FilePath/'+encodeURIComponent(file)+'?width='+w;
-const thumbOf = b => b.tsrc || imgURL(b.thumb);
-const imageOf = b => b.isrc || imgURL(b.img);
+const thumbOf = b => b.tsrc || (b.thumb ? imgURL(b.thumb) : '');   // '' = 无图（长尾约 9%）
+const imageOf = b => b.isrc || (b.img ? imgURL(b.img) : '');
 let filtered = DATA.slice();
 let modalIdx = -1;
 let dailyId = -1;
@@ -109,9 +109,10 @@ function card(b){
   const c = el('div','art-card');
   c.style.setProperty('--ar', b.ar||1.3);
   c.dataset.id = b.id;
-  const wrap = el('div','card-img-wrap loading');
-  const img = el('img'); img.alt = nm(b); img.dataset.src = thumbOf(b); img.loading='lazy';
-  wrap.appendChild(img);
+  const wrap = el('div','card-img-wrap');
+  const ts = thumbOf(b);
+  if(ts){ wrap.classList.add('loading'); const img = el('img'); img.alt = nm(b); img.dataset.src = ts; img.loading='lazy'; wrap.appendChild(img); }
+  else { wrap.classList.add('noimg'); wrap.appendChild(el('div','card-ph','🪶')); }
   if(b.id<100000) wrap.appendChild(el('span','card-num','#'+b.id));
   if(b.fid) wrap.appendChild(el('span','flag-badge','★'));
   if(b.iucn) wrap.appendChild(el('span','iucn-badge iucn-'+b.iucn, b.iucn));
@@ -208,10 +209,10 @@ function trapFocus(container, e){
 function currentModalBird(){ return (modalIdx>=0 && filtered[modalIdx]) || SRC.find(b=>b.id===+new URLSearchParams(location.search).get('id')); }
 function fillModal(){
   const b = filtered[modalIdx]; if(!b) return;
-  const mi = $('#modal-img'); mi.classList.remove('ready'); mi.alt = nm(b);
-  mi.onload = ()=>mi.classList.add('ready');
-  mi.src = imageOf(b);
-  if(mi.complete) mi.classList.add('ready');
+  const mi = $('#modal-img'), mw = $('#modal-img-wrap'); const is = imageOf(b);
+  if(is){ mw.classList.remove('noimg'); mi.style.display=''; $('#zoom-badge').style.display=''; mi.classList.remove('ready'); mi.alt = nm(b);
+    mi.onload = ()=>mi.classList.add('ready'); mi.src = is; if(mi.complete) mi.classList.add('ready'); }
+  else { mw.classList.add('noimg'); mi.style.display='none'; mi.removeAttribute('src'); $('#zoom-badge').style.display='none'; }
   const daily = $('#modal-daily'); if(daily) daily.remove();
   if(b.id===dailyId){ const d=el('span','modal-daily-badge','🗓 '+(lang==='zh'?'今日一鸟':'Bird of the day')); d.id='modal-daily'; $('#modal-badges').appendChild(d); }
   $('#modal-order').textContent = orderName(b);
@@ -292,7 +293,7 @@ function switchMode(mode){
   if(mode==='all' && !ALLREC){
     if(window.BIRD_ALL){ ALLREC=buildAllRecords(); go(); return; }
     if(allLoading) return; allLoading=true; $('#mode-btn').textContent=L[lang].modeLoad;
-    const s=document.createElement('script'); s.src='all.js?v=14';
+    const s=document.createElement('script'); s.src='all.js?v=15';
     s.onload=()=>{ ALLREC=buildAllRecords(); allLoading=false; go(); };
     s.onerror=()=>{ allLoading=false; $('#mode-btn').textContent=L[lang].modeAll; };
     document.head.appendChild(s);
@@ -412,7 +413,7 @@ $('#next-item').onclick=()=>navModal(1);
 $('#modal-fav').onclick=()=>{const b=filtered[modalIdx];toggleFav(b.id);fillModal();document.querySelectorAll('.art-card[data-id="'+b.id+'"] .card-fav').forEach(x=>{x.textContent=favs.has(b.id)?'♥':'♡';x.classList.toggle('on',favs.has(b.id));});};
 $('#modal-share').onclick=()=>{const b=filtered[modalIdx];navigator.clipboard.writeText(location.origin+location.pathname+'?id='+b.id).then(()=>{const s=$('#modal-share');s.classList.add('done');setTimeout(()=>s.classList.remove('done'),1200);});};
 $('#modal-taxo-link').onclick=()=>{const b=filtered[modalIdx];closeModal();state.fam=b.family_en;state.taxoOpen=true;$('#taxo-nav').style.display='block';apply();buildTaxo();updateCrumb();scrollTop();};
-$('#modal-img-wrap').onclick=e=>{if(e.target.id==='zoom-badge'||e.target.id==='modal-img'||e.target.id==='modal-img-wrap')openLightbox(filtered[modalIdx]);};
+$('#modal-img-wrap').onclick=e=>{const b=filtered[modalIdx]; if(b && imageOf(b) && (e.target.id==='zoom-badge'||e.target.id==='modal-img'||e.target.id==='modal-img-wrap'))openLightbox(b);};
 $('#lb-close').onclick=closeLightbox;
 $('#lb-zoomin').onclick=()=>{lb.scale=Math.min(8,lb.scale*1.4);applyLB();};
 $('#lb-zoomout').onclick=()=>{lb.scale=Math.max(1,lb.scale/1.4);if(lb.scale===1){lb.x=lb.y=0;}applyLB();};
@@ -486,7 +487,7 @@ if(initId) openModal(initId);
 // lazy-load non-critical data after core render (descriptions = 74% of payload; per-image credits)
 // — each refills an open modal on arrival
 setTimeout(function loadExtras(){
-  for(const src of ['descs.js?v=14','credits.js?v=14','songs.js?v=14']){
+  for(const src of ['descs.js?v=15','credits.js?v=15','songs.js?v=15']){
     const s=document.createElement('script'); s.src=src;
     s.onload=()=>{ if($('#modal').classList.contains('open')) fillModal(); };
     document.head.appendChild(s);

@@ -113,6 +113,11 @@ button.card-title:focus-visible,.fam-card:focus-visible,.taxo-fam:focus-visible,
 .card-num{position:absolute;top:8px;right:8px;z-index:2;background:rgba(0,0,0,0.6);color:rgba(255,255,255,0.75);font-size:0.62rem;padding:2px 7px;border-radius:10px;backdrop-filter:blur(4px);opacity:0;transition:opacity var(--trans)}
 /* 全量模式：★ 标记该种也在精选 1001 中 */
 .flag-badge{position:absolute;top:7px;right:8px;z-index:2;color:var(--gold);font-size:0.8rem;text-shadow:0 1px 3px rgba(0,0,0,0.7)}
+/* 无图占位（长尾约 9%）：羽毛字形，不露破图 */
+.card-img-wrap.noimg{display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,var(--bg3),var(--bg2))}
+.card-ph{font-size:2.2rem;opacity:0.35;filter:grayscale(0.3)}
+.modal-img-wrap.noimg{display:flex;align-items:center;justify-content:center;cursor:default}
+.modal-img-wrap.noimg::after{content:"🪶";font-size:3.2rem;opacity:0.3}
 #mode-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
 .modal-desc .to-flagship{color:var(--gold)}
 .art-card:hover .card-num{opacity:1}
