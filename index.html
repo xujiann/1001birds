@@ -38,7 +38,7 @@
   }
 }
 </script>
-<link rel="stylesheet" href="style.css?v=12">
+<link rel="stylesheet" href="style.css?v=13">
 </head>
 <body>
 <header class="site-header">
@@ -72,6 +72,7 @@
       <option value="name">按中文名</option>
       <option value="iucn">按濒危程度</option>
     </select>
+    <button id="mode-btn" class="btn-outline btn-text" title="切换：精选 1001 / 全部 ~11000">🌍 全部</button>
     <button id="taxo-btn" class="btn-outline btn-text">分类树</button>
     <button id="famindex-btn" class="btn-outline btn-text">科索引</button>
     <button id="threat-btn" class="btn-outline btn-text">⚠ 受胁</button>
@@ -194,8 +195,8 @@
   <button class="footer-about" id="about-btn">关于本站</button>
 </footer>
 
-<script defer src="birds.js?v=12"></script>
-<script defer src="app.js?v=12"></script>
+<script defer src="birds.js?v=13"></script>
+<script defer src="app.js?v=13"></script>
 <script>
 if ("serviceWorker" in navigator && location.hostname !== "localhost") {
   window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(()=>{}));

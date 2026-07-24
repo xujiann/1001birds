@@ -21,6 +21,7 @@ const L = {
     original:'原图', credit:'图片', source:'来源', of:' / 共 ', rec:'录音',
     songPlay:'▶ 鸣声', songPause:'⏸ 暂停', songLoad:'⋯ 加载中', songErr:'✕ 无法播放',
     favAdd:'收藏', unfav:'取消收藏', openDetail:'查看详情：',
+    modeAll:'🌍 全部', modeFlag:'✦ 精选 1001', modeLoad:'⋯ 加载中',
     aboutIntro:'「1001 只飞鸟」精选世界各地具代表性的鸟类，按严谨的目/科分类编排，兼顾图鉴的信息与画廊的美感。现已收录 1001 种，覆盖 40+ 目、150+ 科。',
     aboutSources:'分类与元数据来自 Wikidata，图片来自 Wikimedia Commons，简介来自 Wikipedia。每张图片均保留原作者署名与许可。'},
   en:{sub:' Birds', species:'species', orders:'orders', families:'families', search:'Search name, sci. name, order/family…',
@@ -32,6 +33,7 @@ const L = {
     original:'Original', credit:'Image', source:'Source', of:' / of ', rec:'Recording',
     songPlay:'▶ Call', songPause:'⏸ Pause', songLoad:'⋯ Loading', songErr:'✕ Cannot play',
     favAdd:'Save', unfav:'Remove from saved', openDetail:'View details: ',
+    modeAll:'🌍 All', modeFlag:'✦ Top 1001', modeLoad:'⋯ Loading',
     aboutIntro:'“1001 Birds” is a curated, bilingual field-guide gallery of representative birds worldwide, organised by strict order/family taxonomy. It now holds 1001 species across 40+ orders and 150+ families.',
     aboutSources:'Taxonomy and metadata from Wikidata, images from Wikimedia Commons, summaries from Wikipedia. Each image keeps its author attribution and licence.'},
 };
@@ -44,6 +46,11 @@ let favs = new Set(JSON.parse(localStorage.getItem('birds_favs')||'[]'));
 const saveFavs = () => localStorage.setItem('birds_favs', JSON.stringify([...favs]));
 let state = { q:'', group:'', realm:'', iucn:'', fam:'', sort:'default', favOnly:false, threatened:false, page:0, taxoOpen:false, list:'' };
 const THREAT = new Set(['VU','EN','CR','EW','EX']);
+// 数据源：旗舰 1001（DATA，富媒体）或全量 ~11,161 IOC 核对表（ALLREC，懒构建）
+let SRC = DATA, MODE = 'flag', ALLREC = null;
+const commonsThumb = (file,w) => 'https://commons.wikimedia.org/wiki/Special:FilePath/'+encodeURIComponent(file)+'?width='+w;
+const thumbOf = b => b.tsrc || imgURL(b.thumb);
+const imageOf = b => b.isrc || imgURL(b.img);
 let filtered = DATA.slice();
 let modalIdx = -1;
 let dailyId = -1;
@@ -61,14 +68,14 @@ function creditHTML(b){
   if(b.file) parts.push(`<a href="${commonsURL(b.file)}" target="_blank" rel="noopener">Wikimedia Commons</a>`);
   return parts.length ? `<span class="mc-label">${L[lang].credit}${lang==='zh'?'：':': '}</span>${parts.join(' · ')}` : '';
 }
-const nm = b => lang==='zh' ? (b.zh||b.en) : (b.en||b.zh);
+const nm = b => (lang==='zh' ? (b.zh||b.en) : (b.en||b.zh)) || b.sci;
 const orderName = b => lang==='zh' ? b.order_zh : b.order_en;
 const familyName = b => lang==='zh' ? b.family_zh : b.family_en;
 
 // ---- filtering ----
 function apply(){
   const q = state.q.trim().toLowerCase();
-  filtered = DATA.filter(b=>{
+  filtered = SRC.filter(b=>{
     if(state.favOnly && !favs.has(b.id)) return false;
     if(state.threatened && !THREAT.has(b.iucn)) return false;
     if(state.group && b.group!==state.group) return false;
@@ -103,9 +110,10 @@ function card(b){
   c.style.setProperty('--ar', b.ar||1.3);
   c.dataset.id = b.id;
   const wrap = el('div','card-img-wrap loading');
-  const img = el('img'); img.alt = nm(b); img.dataset.src = imgURL(b.thumb); img.loading='lazy';
+  const img = el('img'); img.alt = nm(b); img.dataset.src = thumbOf(b); img.loading='lazy';
   wrap.appendChild(img);
-  wrap.appendChild(el('span','card-num','#'+b.id));
+  if(b.id<100000) wrap.appendChild(el('span','card-num','#'+b.id));
+  if(b.fid) wrap.appendChild(el('span','flag-badge','★'));
   if(b.iucn) wrap.appendChild(el('span','iucn-badge iucn-'+b.iucn, b.iucn));
   const favBtn = el('button','card-fav'+(favs.has(b.id)?' on':''), favs.has(b.id)?'♥':'♡');
   favBtn.type='button'; favBtn.setAttribute('aria-label', (favs.has(b.id)?L[lang].unfav:L[lang].favAdd)+' '+nm(b));
@@ -180,7 +188,7 @@ function setupSong(b){
 let lastFocus = null;
 function openModal(id){
   const idx = filtered.findIndex(b=>b.id===id);
-  modalIdx = idx>=0?idx:DATA.findIndex(b=>b.id===id);
+  modalIdx = idx>=0?idx:SRC.findIndex(b=>b.id===id);
   fillModal();
   lastFocus = document.activeElement;          // 记住触发元素，关闭时归还焦点
   $('#modal').classList.add('open');
@@ -197,12 +205,12 @@ function trapFocus(container, e){
   if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }
   else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }
 }
-function currentModalBird(){ return (modalIdx>=0 && filtered[modalIdx]) || DATA.find(b=>b.id===+new URLSearchParams(location.search).get('id')); }
+function currentModalBird(){ return (modalIdx>=0 && filtered[modalIdx]) || SRC.find(b=>b.id===+new URLSearchParams(location.search).get('id')); }
 function fillModal(){
   const b = filtered[modalIdx]; if(!b) return;
   const mi = $('#modal-img'); mi.classList.remove('ready'); mi.alt = nm(b);
   mi.onload = ()=>mi.classList.add('ready');
-  mi.src = imgURL(b.img);
+  mi.src = imageOf(b);
   if(mi.complete) mi.classList.add('ready');
   const daily = $('#modal-daily'); if(daily) daily.remove();
   if(b.id===dailyId){ const d=el('span','modal-daily-badge','🗓 '+(lang==='zh'?'今日一鸟':'Bird of the day')); d.id='modal-daily'; $('#modal-badges').appendChild(d); }
@@ -215,8 +223,17 @@ function fillModal(){
   $('#modal-family').textContent = b.family_zh+' '+b.family_en;
   $('#modal-realm').textContent = [b.group, b.realm].filter(Boolean).join(' · ') || '—';
   $('#modal-iucn-full').textContent = b.iucn ? b.iucn+' '+(IUCN_LABEL[lang][b.iucn]||'') : '—';
-  const dd = (window.BIRD_DESCS && window.BIRD_DESCS[b.id]) || ['',''];
-  $('#modal-desc').textContent = (lang==='zh'? (dd[0]||dd[1]) : (dd[1]||dd[0])) || (window.BIRD_DESCS ? '' : '…');
+  if(b.lite){
+    // 长尾（全量核对表）：无本地简介，给维基百科链接；若有旗舰精选则给跳转
+    const wt = encodeURIComponent((b.en||b.sci).replace(/ /g,'_'));
+    let html = `<a href="https://en.wikipedia.org/wiki/${wt}" target="_blank" rel="noopener">Wikipedia →</a>`;
+    if(b.fid) html += ` &nbsp;·&nbsp; <a href="#" class="to-flagship" data-fid="${b.fid}">★ ${lang==='zh'?'查看精选完整介绍':'View curated feature'} →</a>`;
+    $('#modal-desc').innerHTML = html;
+    const jump=$('#modal-desc .to-flagship'); if(jump) jump.onclick=e=>{ e.preventDefault(); switchMode('flag'); openModal(+jump.dataset.fid); };
+  } else {
+    const dd = (window.BIRD_DESCS && window.BIRD_DESCS[b.id]) || ['',''];
+    $('#modal-desc').textContent = (lang==='zh'? (dd[0]||dd[1]) : (dd[1]||dd[0])) || (window.BIRD_DESCS ? '' : '…');
+  }
   const fav = $('#modal-fav'); fav.className='modal-fav'+(favs.has(b.id)?' on':''); fav.textContent = favs.has(b.id)?'♥ 已收藏':'♡ 收藏';
   $('#modal-credit').innerHTML = creditHTML(b);
   setupSong(b);
@@ -243,6 +260,45 @@ function applyLB(){const img=$('#lb-img');img.style.transform=`translate(${lb.x}
 function closeLightbox(){$('#lightbox').classList.remove('open');}
 
 // ---- taxonomy nav ----
+// ---- full checklist mode (11,161 IOC species, lazy) ----
+function buildAllRecords(){
+  const A = window.BIRD_ALL; if(!A) return [];
+  const flagById = new Map(DATA.map(d=>[d.id,d]));   // 旗舰种沿用其策展中文名/英文名
+  return A.sp.map((r,i)=>{
+    const [sci,zh0,en0,fi,iucn,file,fid,sl] = r; const fam = A.families[fi], ord = A.orders[fam.o];
+    const fd = fid ? flagById.get(fid) : null;
+    const zh = (fd && fd.zh) || zh0, en = (fd && fd.en) || en0;
+    return { id:1000001+i, sci, zh:zh||'', en:en||'', order_en:ord.en, order_zh:ord.zh||ord.en,
+      family_en:fam.en, family_zh:fam.zh||fam.en, group:'', realm:'', iucn:iucn||'', file:file||'',
+      fid:fid||0, sl:sl||0, lite:true, ar:1.35,
+      tsrc: file?commonsThumb(file,420):'', isrc: file?commonsThumb(file,1100):'' };
+  });
+}
+let allLoading = false;
+function switchMode(mode){
+  if(mode===MODE) return;
+  const go=()=>{
+    MODE=mode; SRC = mode==='all' ? ALLREC : DATA;
+    state.fam=''; state.group=''; state.threatened=false; state.q=''; $('#search').value='';
+    $('#group-filter').value=''; $('#iucn-filter').value=''; $('#threat-btn').classList.remove('active');
+    if(famIndexOpen) toggleFamIndex(false);
+    const mb=$('#mode-btn'); mb.classList.toggle('active', mode==='all'); mb.textContent = mode==='all'?L[lang].modeFlag:L[lang].modeAll;
+    document.body.classList.toggle('full-mode', mode==='all');
+    fillSelects(); apply(); if(state.taxoOpen) buildTaxo(); updateCrumb();
+    $('#order-count').textContent=new Set(SRC.map(b=>b.order_en)).size;
+    $('#family-count').textContent=new Set(SRC.map(b=>b.family_en)).size;
+    scrollTop();
+  };
+  if(mode==='all' && !ALLREC){
+    if(window.BIRD_ALL){ ALLREC=buildAllRecords(); go(); return; }
+    if(allLoading) return; allLoading=true; $('#mode-btn').textContent=L[lang].modeLoad;
+    const s=document.createElement('script'); s.src='all.js?v=13';
+    s.onload=()=>{ ALLREC=buildAllRecords(); allLoading=false; go(); };
+    s.onerror=()=>{ allLoading=false; $('#mode-btn').textContent=L[lang].modeAll; };
+    document.head.appendChild(s);
+  } else go();
+}
+
 // ---- family visual index ----
 function toggleFamIndex(show){
   famIndexOpen = show;
@@ -254,8 +310,8 @@ function toggleFamIndex(show){
 }
 function buildFamIndex(){
   const idx=$('#fam-index'); const fams={};
-  DATA.forEach(b=>{ (fams[b.family_en]=fams[b.family_en]||{en:b.family_en,zh:b.family_zh,order_zh:b.order_zh,order_en:b.order_en,items:[]}).items.push(b); });
-  const list=Object.values(fams).sort((a,b)=>DATA.findIndex(x=>x.family_en===a.en)-DATA.findIndex(x=>x.family_en===b.en));
+  SRC.forEach(b=>{ (fams[b.family_en]=fams[b.family_en]||{en:b.family_en,zh:b.family_zh,order_zh:b.order_zh,order_en:b.order_en,items:[]}).items.push(b); });
+  const list=Object.values(fams).sort((a,b)=>SRC.findIndex(x=>x.family_en===a.en)-SRC.findIndex(x=>x.family_en===b.en));
   idx.innerHTML='';
   list.forEach(f=>{
     const cover=f.items[0];
@@ -275,9 +331,9 @@ function buildFamIndex(){
 function buildTaxo(){
   const nav=$('#taxo-nav'); nav.innerHTML='';
   const orders={};
-  DATA.forEach(b=>{(orders[b.order_en]=orders[b.order_en]||{zh:b.order_zh,en:b.order_en,fams:{},n:0});orders[b.order_en].n++;
+  SRC.forEach(b=>{(orders[b.order_en]=orders[b.order_en]||{zh:b.order_zh,en:b.order_en,fams:{},n:0});orders[b.order_en].n++;
     const f=orders[b.order_en].fams; (f[b.family_en]=f[b.family_en]||{zh:b.family_zh,en:b.family_en,n:0}).n++;});
-  Object.values(orders).sort((a,b)=>DATA.findIndex(x=>x.order_en===a.en)-DATA.findIndex(x=>x.order_en===b.en)).forEach(o=>{
+  Object.values(orders).sort((a,b)=>SRC.findIndex(x=>x.order_en===a.en)-SRC.findIndex(x=>x.order_en===b.en)).forEach(o=>{
     const box=el('div','taxo-order');
     const head=el('div','taxo-order-head');
     head.innerHTML=`<span class="caret">▶</span><span class="taxo-order-name">${lang==='zh'?o.zh:o.en} <small>${lang==='zh'?o.en:o.zh}</small></span><span class="taxo-order-cnt">${o.n}</span>`;
@@ -296,7 +352,7 @@ function buildTaxo(){
 function updateCrumb(){
   const bar=$('#crumb-bar');
   if(!state.fam){bar.style.display='none';return;}
-  const b=DATA.find(x=>x.family_en===state.fam);
+  const b=SRC.find(x=>x.family_en===state.fam);
   bar.style.display='flex'; bar.innerHTML='';
   const home=el('button','crumb','← '+(lang==='zh'?'全部':'All')); home.onclick=()=>{state.fam='';apply();buildTaxo();updateCrumb();};
   bar.appendChild(home);
@@ -305,8 +361,8 @@ function updateCrumb(){
 
 // ---- filters population ----
 function fillSelects(){
-  const groups=[...new Set(DATA.map(b=>b.group))].filter(Boolean);
-  const iucns=['EX','EW','CR','EN','VU','NT','LC'].filter(k=>DATA.some(b=>b.iucn===k));
+  const groups=[...new Set(SRC.map(b=>b.group))].filter(Boolean);
+  const iucns=["EX","EW","CR","EN","VU","NT","LC"].filter(k=>SRC.some(b=>b.iucn===k));
   $('#group-filter').innerHTML=`<option value="">${L[lang].allGroup}</option>`+groups.map(g=>`<option value="${g}">${g}</option>`).join('');
   $('#iucn-filter').innerHTML=`<option value="">${L[lang].allIucn}</option>`+iucns.map(k=>`<option value="${k}">${k} ${IUCN_LABEL[lang][k]}</option>`).join('');
 }
@@ -319,6 +375,7 @@ function applyLang(){
   $('#t-orders').textContent=L[lang].orders; $('#t-families').textContent=L[lang].families;
   $('#search').placeholder=L[lang].search;
   $('#taxo-btn').textContent=L[lang].taxo; $('#famindex-btn').textContent=L[lang].famidx; $('#threat-btn').textContent=L[lang].threat; $('#fav-only-btn').innerHTML=L[lang].fav;
+  $('#mode-btn').textContent = MODE==='all'?L[lang].modeFlag:L[lang].modeAll;
   $('#daily-btn').textContent=L[lang].daily; $('#random-btn').textContent=L[lang].random;
   $('#l-order').textContent=L[lang].order; $('#l-family').textContent=L[lang].family;
   $('#l-realm').textContent=L[lang].realm; $('#l-iucn').textContent=L[lang].iucn;
@@ -327,8 +384,8 @@ function applyLang(){
   $('#t-footer').textContent=L[lang].footer; $('#t-original').textContent=L[lang].original;
   $('#about-intro').textContent=L[lang].aboutIntro; $('#about-sources').textContent=L[lang].aboutSources;
   fillSelects(); buildTaxo(); updateCrumb(); if(famIndexOpen) buildFamIndex();
-  $('#order-count').textContent=new Set(DATA.map(b=>b.order_en)).size;
-  $('#family-count').textContent=new Set(DATA.map(b=>b.family_en)).size;
+  $("#order-count").textContent=new Set(SRC.map(b=>b.order_en)).size;
+  $("#family-count").textContent=new Set(SRC.map(b=>b.family_en)).size;
 }
 
 // ---- events ----
@@ -342,9 +399,10 @@ $('#iucn-filter').onchange=e=>{state.iucn=e.target.value;apply();};
 $('#sort-filter').onchange=e=>{state.sort=e.target.value;apply();};
 $('#taxo-btn').onclick=()=>{if(famIndexOpen)toggleFamIndex(false);state.taxoOpen=!state.taxoOpen;$('#taxo-nav').style.display=state.taxoOpen?'block':'none';$('#taxo-btn').classList.toggle('active',state.taxoOpen);if(state.taxoOpen)buildTaxo();};
 $('#famindex-btn').onclick=()=>toggleFamIndex(!famIndexOpen);
+$('#mode-btn').onclick=()=>switchMode(MODE==='all'?'flag':'all');
 $('#fav-only-btn').onclick=()=>{state.favOnly=!state.favOnly;$('#fav-only-btn').classList.toggle('active',state.favOnly);apply();};
-$('#random-btn').onclick=()=>{const b=DATA[Math.floor(Math.random()*DATA.length)];openModal(b.id);};
-$('#daily-btn').onclick=()=>{const d=Math.floor(Date.now()/864e5)%DATA.length;dailyId=DATA[d].id;openModal(DATA[d].id);};
+$('#random-btn').onclick=()=>{const b=SRC[Math.floor(Math.random()*SRC.length)];openModal(b.id);};
+$('#daily-btn').onclick=()=>{const d=Math.floor(Date.now()/864e5)%SRC.length;dailyId=SRC[d].id;openModal(SRC[d].id);};
 $('#view-toggle').onclick=()=>{$('#gallery').classList.toggle('list-view');$('#view-toggle').textContent=$('#gallery').classList.contains('list-view')?'☰':'⊞';};
 $('#reset-btn').onclick=()=>{state={...state,q:'',group:'',iucn:'',fam:'',favOnly:false,threatened:false};$('#search').value='';$('#group-filter').value='';$('#iucn-filter').value='';$('#fav-only-btn').classList.remove('active');$('#threat-btn').classList.remove('active');apply();buildTaxo();updateCrumb();};
 $('#modal-close').onclick=closeModal;
@@ -368,20 +426,20 @@ window.addEventListener('mouseup',()=>{lb.drag=false;stage.classList.remove('gra
 $('#help-btn').onclick=()=>$('#help-overlay').classList.add('open');
 $('#help-close').onclick=()=>$('#help-overlay').classList.remove('open');
 $('#help-overlay').onclick=e=>{if(e.target===$('#help-overlay'))$('#help-overlay').classList.remove('open');};
-$('#about-btn').onclick=()=>{$('#about-stats').innerHTML=`<span><strong>${DATA.length}</strong>${L[lang].species}</span><span><strong>${new Set(DATA.map(b=>b.order_en)).size}</strong>${L[lang].orders}</span><span><strong>${new Set(DATA.map(b=>b.family_en)).size}</strong>${L[lang].families}</span>`;buildConserv();$('#about-overlay').classList.add('open');};
+$('#about-btn').onclick=()=>{$('#about-stats').innerHTML=`<span><strong>${SRC.length}</strong>${L[lang].species}</span><span><strong>${new Set(SRC.map(b=>b.order_en)).size}</strong>${L[lang].orders}</span><span><strong>${new Set(SRC.map(b=>b.family_en)).size}</strong>${L[lang].families}</span>`;buildConserv();$('#about-overlay').classList.add('open');};
 
 // 保护状况总览：IUCN 分布堆叠条 + 点击筛选
 const IUCN_C = {LC:'#4caf50',NT:'#9cc021',VU:'#e6b428',EN:'#e8783c',CR:'#d83c3c',EW:'#7a3f8c',EX:'#2b2b2b',NA:'#5a6a63'};
 function buildConserv(){
   const wrap=$('#conserv'); if(!wrap) return;
   const seq=['LC','NT','VU','EN','CR','EW','EX','NA'];
-  const cnt={}; DATA.forEach(b=>{const k=b.iucn||'NA';cnt[k]=(cnt[k]||0)+1;});
-  const rated=DATA.length-(cnt.NA||0);
+  const cnt={}; SRC.forEach(b=>{const k=b.iucn||'NA';cnt[k]=(cnt[k]||0)+1;});
+  const rated=SRC.length-(cnt.NA||0);
   const threat=(cnt.VU||0)+(cnt.EN||0)+(cnt.CR||0);
   const gone=(cnt.EX||0)+(cnt.EW||0);
   const T={zh:{rated:'种已评估保护状况',threat:'受胁',gone:'已灭绝／野外灭绝',lbl:{LC:'无危',NT:'近危',VU:'易危',EN:'濒危',CR:'极危',EW:'野外灭绝',EX:'灭绝',NA:'未评估'}},
     en:{rated:' species assessed',threat:'threatened',gone:'extinct / EW',lbl:{LC:'Least Concern',NT:'Near Threatened',VU:'Vulnerable',EN:'Endangered',CR:'Critically Endangered',EW:'Extinct in Wild',EX:'Extinct',NA:'Not assessed'}}}[lang];
-  const total=DATA.length;
+  const total=SRC.length;
   const bar=seq.filter(k=>cnt[k]).map(k=>{
     const w=(100*cnt[k]/total).toFixed(2);
     return `<div class="conserv-seg${k==='EX'?' ex':''}" style="flex:${cnt[k]} 0 auto;background:${IUCN_C[k]}" data-iucn="${k==='NA'?'':k}" title="${T.lbl[k]} ${k==='NA'?'':k} · ${cnt[k]} ${lang==='zh'?'种':''} · ${lang==='zh'?'点击筛选':'click to filter'}"></div>`;
@@ -428,7 +486,7 @@ if(initId) openModal(initId);
 // lazy-load non-critical data after core render (descriptions = 74% of payload; per-image credits)
 // — each refills an open modal on arrival
 setTimeout(function loadExtras(){
-  for(const src of ['descs.js?v=12','credits.js?v=12','songs.js?v=12']){
+  for(const src of ['descs.js?v=13','credits.js?v=13','songs.js?v=13']){
     const s=document.createElement('script'); s.src=src;
     s.onload=()=>{ if($('#modal').classList.contains('open')) fillModal(); };
     document.head.appendChild(s);
