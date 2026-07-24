@@ -20,6 +20,7 @@ const L = {
     footer:'精选世界1001种飞鸟 · 数据来自 Wikidata / Wikimedia Commons / Wikipedia',
     original:'原图', credit:'图片', source:'来源', of:' / 共 ', rec:'录音',
     songPlay:'▶ 鸣声', songPause:'⏸ 暂停', songLoad:'⋯ 加载中', songErr:'✕ 无法播放',
+    favAdd:'收藏', unfav:'取消收藏', openDetail:'查看详情：',
     aboutIntro:'「1001 只飞鸟」精选世界各地具代表性的鸟类，按严谨的目/科分类编排，兼顾图鉴的信息与画廊的美感。现已收录 1001 种，覆盖 40+ 目、150+ 科。',
     aboutSources:'分类与元数据来自 Wikidata，图片来自 Wikimedia Commons，简介来自 Wikipedia。每张图片均保留原作者署名与许可。'},
   en:{sub:' Birds', species:'species', orders:'orders', families:'families', search:'Search name, sci. name, order/family…',
@@ -30,6 +31,7 @@ const L = {
     footer:'A curated gallery of the world\'s birds · Data from Wikidata / Wikimedia Commons / Wikipedia',
     original:'Original', credit:'Image', source:'Source', of:' / of ', rec:'Recording',
     songPlay:'▶ Call', songPause:'⏸ Pause', songLoad:'⋯ Loading', songErr:'✕ Cannot play',
+    favAdd:'Save', unfav:'Remove from saved', openDetail:'View details: ',
     aboutIntro:'“1001 Birds” is a curated, bilingual field-guide gallery of representative birds worldwide, organised by strict order/family taxonomy. It now holds 1001 species across 40+ orders and 150+ families.',
     aboutSources:'Taxonomy and metadata from Wikidata, images from Wikimedia Commons, summaries from Wikipedia. Each image keeps its author attribution and licence.'},
 };
@@ -106,11 +108,16 @@ function card(b){
   wrap.appendChild(el('span','card-num','#'+b.id));
   if(b.iucn) wrap.appendChild(el('span','iucn-badge iucn-'+b.iucn, b.iucn));
   const favBtn = el('button','card-fav'+(favs.has(b.id)?' on':''), favs.has(b.id)?'♥':'♡');
-  favBtn.onclick = e=>{e.stopPropagation();toggleFav(b.id,favBtn);};
+  favBtn.type='button'; favBtn.setAttribute('aria-label', (favs.has(b.id)?L[lang].unfav:L[lang].favAdd)+' '+nm(b));
+  favBtn.onclick = e=>{e.stopPropagation();toggleFav(b.id,favBtn);favBtn.setAttribute('aria-label',(favs.has(b.id)?L[lang].unfav:L[lang].favAdd)+' '+nm(b));};
   wrap.appendChild(favBtn);
   const body = el('div','card-body');
   body.appendChild(el('div','card-order', orderName(b)+' · '+familyName(b)));
-  body.appendChild(el('div','card-title', nm(b)));
+  // 标题用真实 button：键盘可达且被朗读为按钮。不给卡片本身加 role=button —
+  // 那会让内嵌的收藏按钮构成 ARIA 嵌套违规（1001art 踩过并回退过）。
+  const titleBtn = el('button','card-title'); titleBtn.type='button'; titleBtn.textContent = nm(b);
+  titleBtn.onclick = e=>{ e.stopPropagation(); openModal(b.id); };
+  body.appendChild(titleBtn);
   body.appendChild(el('div','card-sci', b.sci));
   if(lang==='zh') body.appendChild(el('div','card-en', b.en));
   c.appendChild(wrap); c.appendChild(body);
@@ -170,12 +177,25 @@ function setupSong(b){
 }
 
 // ---- modal ----
+let lastFocus = null;
 function openModal(id){
   const idx = filtered.findIndex(b=>b.id===id);
   modalIdx = idx>=0?idx:DATA.findIndex(b=>b.id===id);
   fillModal();
+  lastFocus = document.activeElement;          // 记住触发元素，关闭时归还焦点
   $('#modal').classList.add('open');
+  setTimeout(()=>$('#modal-close').focus(), 30);
   history.replaceState(null,'','?id='+id);
+}
+// 焦点困在弹窗内（Tab 不跑到背后的画廊）
+function trapFocus(container, e){
+  if(e.key!=='Tab') return;
+  const f = container.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+  const vis = [...f].filter(x=>x.offsetParent!==null || x===document.activeElement);
+  if(!vis.length) return;
+  const first = vis[0], last = vis[vis.length-1];
+  if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }
+  else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }
 }
 function currentModalBird(){ return (modalIdx>=0 && filtered[modalIdx]) || DATA.find(b=>b.id===+new URLSearchParams(location.search).get('id')); }
 function fillModal(){
@@ -204,7 +224,7 @@ function fillModal(){
   $('#modal-taxo-link').textContent = L[lang].famLink;
 }
 function navModal(d){ if(!filtered.length)return; modalIdx=(modalIdx+d+filtered.length)%filtered.length; fillModal(); history.replaceState(null,'','?id='+filtered[modalIdx].id); }
-function closeModal(){ stopSong(); $('#modal').classList.remove('open'); history.replaceState(null,'',location.pathname); }
+function closeModal(){ stopSong(); $('#modal').classList.remove('open'); history.replaceState(null,'',location.pathname); if(lastFocus&&lastFocus.focus){ lastFocus.focus(); lastFocus=null; } }
 
 // ---- lightbox ----
 let lb={scale:1,x:0,y:0,drag:false,sx:0,sy:0};
@@ -243,7 +263,12 @@ function buildFamIndex(){
     card.innerHTML=`<img class="fam-thumb" loading="lazy" src="${imgURL(cover.thumb)}" alt="${lang==='zh'?f.zh:f.en}">`+
       `<div class="fam-meta"><div class="fam-name">${lang==='zh'?f.zh:f.en}</div><div class="fam-latin">${f.en}</div>`+
       `<div class="fam-sub">${lang==='zh'?f.order_zh:f.order_en} · ${f.items.length}${lang==='zh'?' 种':''}</div></div>`;
-    card.onclick=()=>{ state.fam=f.en; toggleFamIndex(false); state.taxoOpen=true; $('#taxo-nav').style.display='block'; apply(); buildTaxo(); updateCrumb(); scrollTop(); };
+    // 无内嵌交互元素，可安全地作为按钮：键盘可达 + 被朗读为按钮
+    card.tabIndex=0; card.setAttribute('role','button');
+    card.setAttribute('aria-label', `${lang==='zh'?f.zh:f.en} · ${f.items.length}${lang==='zh'?' 种':' species'}`);
+    const enter=()=>{ state.fam=f.en; toggleFamIndex(false); state.taxoOpen=true; $('#taxo-nav').style.display='block'; apply(); buildTaxo(); updateCrumb(); scrollTop(); };
+    card.onclick=enter;
+    card.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); enter(); } };
     idx.appendChild(card);
   });
 }
@@ -376,6 +401,11 @@ $('#about-overlay').onclick=e=>{if(e.target===$('#about-overlay'))$('#about-over
 window.addEventListener('scroll',()=>{$('#to-top').classList.toggle('show',window.scrollY>600);});
 $('#to-top').onclick=scrollTop;
 document.addEventListener('keydown',e=>{
+  // 焦点困在打开的弹层内（在 INPUT 早退之前处理，弹层内的输入框也要受困）
+  if(e.key==='Tab'){
+    const open = ['#lightbox','#modal','#help-overlay','#about-overlay'].map(s=>$(s)).find(x=>x&&x.classList.contains('open'));
+    if(open){ trapFocus(open.querySelector('.modal-box,.help-box,.about-box')||open, e); return; }
+  }
   if(e.target.tagName==='INPUT')return;
   if(e.key==='Escape'){closeLightbox();closeModal();$('#help-overlay').classList.remove('open');$('#about-overlay').classList.remove('open');}
   else if($('#lightbox').classList.contains('open'))return;
@@ -398,7 +428,7 @@ if(initId) openModal(initId);
 // lazy-load non-critical data after core render (descriptions = 74% of payload; per-image credits)
 // — each refills an open modal on arrival
 setTimeout(function loadExtras(){
-  for(const src of ['descs.js?v=11','credits.js?v=11','songs.js?v=11']){
+  for(const src of ['descs.js?v=12','credits.js?v=12','songs.js?v=12']){
     const s=document.createElement('script'); s.src=src;
     s.onload=()=>{ if($('#modal').classList.contains('open')) fillModal(); };
     document.head.appendChild(s);
