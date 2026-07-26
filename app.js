@@ -2,9 +2,11 @@
 (function(){
 'use strict';
 const DATA = (window.BIRD_DATA || []).slice();
-// 图片基址：jsDelivr CDN（图床仓库 xujiann/1001birds-img@v2）。本地预览可临时置空。
-const IMG_BASE = 'https://cdn.jsdelivr.net/gh/xujiann/1001birds-img@v4/';
-const imgURL = p => IMG_BASE + p;
+// 图片基址：腾讯云 COS（国内实测 0.2s/张，jsDelivr 约 1.9s，快 7~8 倍）。
+// 数据里的路径是 images/1.jpg、images/t/1.jpg，COS 上对应 birds/1.jpg、birds/t/1.jpg，
+// 故去掉 images/ 前缀。本地预览把 IMG_BASE 置空即可用本地 images/。
+const IMG_BASE = 'https://pic-1302017848.cos.ap-nanjing.myqcloud.com/birds/';
+const imgURL = p => IMG_BASE ? IMG_BASE + String(p).replace(/^images\//, '') : p;
 const commonsURL = f => f && /^https?:/.test(f) ? f : 'https://commons.wikimedia.org/wiki/Special:FilePath/' + encodeURIComponent(f||'');
 
 const IUCN_ORDER = {EX:0,EW:1,CR:2,EN:3,VU:4,NT:5,LC:6,DD:7};
@@ -293,7 +295,7 @@ function switchMode(mode){
   if(mode==='all' && !ALLREC){
     if(window.BIRD_ALL){ ALLREC=buildAllRecords(); go(); return; }
     if(allLoading) return; allLoading=true; $('#mode-btn').textContent=L[lang].modeLoad;
-    const s=document.createElement('script'); s.src='all.js?v=17';
+    const s=document.createElement('script'); s.src='all.js?v=18';
     s.onload=()=>{ ALLREC=buildAllRecords(); allLoading=false; go(); };
     s.onerror=()=>{ allLoading=false; $('#mode-btn').textContent=L[lang].modeAll; };
     document.head.appendChild(s);
@@ -487,7 +489,7 @@ if(initId) openModal(initId);
 // lazy-load non-critical data after core render (descriptions = 74% of payload; per-image credits)
 // — each refills an open modal on arrival
 setTimeout(function loadExtras(){
-  for(const src of ['descs.js?v=17','credits.js?v=17','songs.js?v=17']){
+  for(const src of ['descs.js?v=18','credits.js?v=18','songs.js?v=18']){
     const s=document.createElement('script'); s.src=src;
     s.onload=()=>{ if($('#modal').classList.contains('open')) fillModal(); };
     document.head.appendChild(s);
