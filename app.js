@@ -50,7 +50,11 @@ let state = { q:'', group:'', realm:'', iucn:'', fam:'', sort:'default', favOnly
 const THREAT = new Set(['VU','EN','CR','EW','EX']);
 // 数据源：旗舰 1001（DATA，富媒体）或全量 ~11,161 IOC 核对表（ALLREC，懒构建）
 let SRC = DATA, MODE = 'flag', ALLREC = null;
+// 长尾图：优先直连 upload.wikimedia.org 的缩略图（省掉 Special:FilePath 的 2 次 302，
+// 实测 2.3s → 1.2s）。宽度须用标准档（500/1024），任意宽度会 400。直连失败时回落 FilePath。
 const commonsThumb = (file,w) => 'https://commons.wikimedia.org/wiki/Special:FilePath/'+encodeURIComponent(file)+'?width='+w;
+const wmDirect = (file,h,w) => { const u = encodeURIComponent(String(file).replace(/ /g,'_')); return `https://upload.wikimedia.org/wikipedia/commons/thumb/${h[0]}/${h}/${u}/${w}px-${u}`; };
+const thumbSrc = (file,h,w) => h ? wmDirect(file,h,w) : commonsThumb(file,w);
 const thumbOf = b => b.tsrc || (b.thumb ? imgURL(b.thumb) : '');   // '' = 无图（长尾约 9%）
 const imageOf = b => b.isrc || (b.img ? imgURL(b.img) : '');
 let filtered = DATA.slice();
@@ -113,7 +117,7 @@ function card(b){
   c.dataset.id = b.id;
   const wrap = el('div','card-img-wrap');
   const ts = thumbOf(b);
-  if(ts){ wrap.classList.add('loading'); const img = el('img'); img.alt = nm(b); img.dataset.src = ts; img.loading='lazy'; wrap.appendChild(img); }
+  if(ts){ wrap.classList.add('loading'); const img = el('img'); img.alt = nm(b); img.dataset.src = ts; if(b.tfb) img.dataset.fb = b.tfb; img.loading='lazy'; wrap.appendChild(img); }
   else { wrap.classList.add('noimg'); wrap.appendChild(el('div','card-ph','🪶')); }
   if(b.id<100000) wrap.appendChild(el('span','card-num','#'+b.id));
   if(b.fid) wrap.appendChild(el('span','flag-badge','★'));
@@ -146,7 +150,11 @@ const io = new IntersectionObserver((entries)=>{
     const img = en.target; io.unobserve(img);
     img.src = img.dataset.src; img.removeAttribute('data-src');
     img.onload = ()=>{img.classList.add('loaded');img.closest('.card-img-wrap').classList.replace('loading','loaded');};
-    img.onerror = ()=>{img.closest('.card-img-wrap').classList.remove('loading');};
+    // 直连失败（原图小于该档 / 限流）→ 回落 Special:FilePath，只试一次
+    img.onerror = ()=>{
+      if(img.dataset.fb && img.src!==img.dataset.fb){ const fb=img.dataset.fb; delete img.dataset.fb; img.src=fb; return; }
+      img.closest('.card-img-wrap').classList.remove('loading');
+    };
   });
 },{rootMargin:'400px'});
 
@@ -213,7 +221,10 @@ function fillModal(){
   const b = filtered[modalIdx]; if(!b) return;
   const mi = $('#modal-img'), mw = $('#modal-img-wrap'); const is = imageOf(b);
   if(is){ mw.classList.remove('noimg'); mi.style.display=''; $('#zoom-badge').style.display=''; mi.classList.remove('ready'); mi.alt = nm(b);
-    mi.onload = ()=>mi.classList.add('ready'); mi.src = is; if(mi.complete) mi.classList.add('ready'); }
+    mi.onload = ()=>mi.classList.add('ready');
+    let fb = b.ifb || '';                       // 直连失败回落 FilePath，只试一次
+    mi.onerror = ()=>{ if(fb && mi.src!==fb){ const u=fb; fb=''; mi.src=u; } };
+    mi.src = is; if(mi.complete) mi.classList.add('ready'); }
   else { mw.classList.add('noimg'); mi.style.display='none'; mi.removeAttribute('src'); $('#zoom-badge').style.display='none'; }
   const daily = $('#modal-daily'); if(daily) daily.remove();
   if(b.id===dailyId){ const d=el('span','modal-daily-badge','🗓 '+(lang==='zh'?'今日一鸟':'Bird of the day')); d.id='modal-daily'; $('#modal-badges').appendChild(d); }
@@ -268,13 +279,14 @@ function buildAllRecords(){
   const A = window.BIRD_ALL; if(!A) return [];
   const flagById = new Map(DATA.map(d=>[d.id,d]));   // 旗舰种沿用其策展中文名/英文名
   return A.sp.map((r,i)=>{
-    const [sci,zh0,en0,fi,iucn,file,fid,sl] = r; const fam = A.families[fi], ord = A.orders[fam.o];
+    const [sci,zh0,en0,fi,iucn,file,fid,sl,h] = r; const fam = A.families[fi], ord = A.orders[fam.o];
     const fd = fid ? flagById.get(fid) : null;
     const zh = (fd && fd.zh) || zh0, en = (fd && fd.en) || en0;
     return { id:1000001+i, sci, zh:zh||'', en:en||'', order_en:ord.en, order_zh:ord.zh||ord.en,
       family_en:fam.en, family_zh:fam.zh||fam.en, group:'', realm:'', iucn:iucn||'', file:file||'',
       fid:fid||0, sl:sl||0, lite:true, ar:1.35,
-      tsrc: file?commonsThumb(file,420):'', isrc: file?commonsThumb(file,1100):'' };
+      tsrc: file?thumbSrc(file,h,500):'',  isrc: file?thumbSrc(file,h,1024):'',
+      tfb:  file?commonsThumb(file,500):'', ifb: file?commonsThumb(file,1024):'' };
   });
 }
 let allLoading = false;
@@ -295,7 +307,7 @@ function switchMode(mode){
   if(mode==='all' && !ALLREC){
     if(window.BIRD_ALL){ ALLREC=buildAllRecords(); go(); return; }
     if(allLoading) return; allLoading=true; $('#mode-btn').textContent=L[lang].modeLoad;
-    const s=document.createElement('script'); s.src='all.js?v=18';
+    const s=document.createElement('script'); s.src='all.js?v=19';
     s.onload=()=>{ ALLREC=buildAllRecords(); allLoading=false; go(); };
     s.onerror=()=>{ allLoading=false; $('#mode-btn').textContent=L[lang].modeAll; };
     document.head.appendChild(s);
@@ -489,7 +501,7 @@ if(initId) openModal(initId);
 // lazy-load non-critical data after core render (descriptions = 74% of payload; per-image credits)
 // — each refills an open modal on arrival
 setTimeout(function loadExtras(){
-  for(const src of ['descs.js?v=18','credits.js?v=18','songs.js?v=18']){
+  for(const src of ['descs.js?v=19','credits.js?v=19','songs.js?v=19']){
     const s=document.createElement('script'); s.src=src;
     s.onload=()=>{ if($('#modal').classList.contains('open')) fillModal(); };
     document.head.appendChild(s);
