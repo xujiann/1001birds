@@ -188,6 +188,9 @@ function setupSong(b){
   stopSong();
   if(!s){ wrap.style.display='none'; return; }
   wrap.style.display='flex';
+  // 时长（点之前就知道要听多久 / 要下多少）——多数 27 秒，但个别是几十分钟的长录音
+  const dEl = $('#song-dur');
+  if(dEl){ dEl.textContent = s.d ? (s.d>=60 ? `${Math.floor(s.d/60)}:${String(s.d%60).padStart(2,'0')}` : `0:${String(s.d).padStart(2,'0')}`) : ''; dEl.classList.toggle('long', !!s.d && s.d>300); }
   // 自有托管后仍须署名 + 回链 Commons 源文件（CC 要求标明作者/许可/来源）
   const sp2 = [];
   if(s.a) sp2.push(esc(s.a));
@@ -315,7 +318,7 @@ function switchMode(mode){
   if(mode==='all' && !ALLREC){
     if(window.BIRD_ALL){ ALLREC=buildAllRecords(); go(); return; }
     if(allLoading) return; allLoading=true; $('#mode-btn').textContent=L[lang].modeLoad;
-    const s=document.createElement('script'); s.src='all.js?v=20';
+    const s=document.createElement('script'); s.src='all.js?v=21';
     s.onload=()=>{ ALLREC=buildAllRecords(); allLoading=false; go(); };
     s.onerror=()=>{ allLoading=false; $('#mode-btn').textContent=L[lang].modeAll; };
     document.head.appendChild(s);
@@ -509,7 +512,7 @@ if(initId) openModal(initId);
 // lazy-load non-critical data after core render (descriptions = 74% of payload; per-image credits)
 // — each refills an open modal on arrival
 setTimeout(function loadExtras(){
-  for(const src of ['descs.js?v=20','credits.js?v=20','songs.js?v=20']){
+  for(const src of ['descs.js?v=21','credits.js?v=21','songs.js?v=21']){
     const s=document.createElement('script'); s.src=src;
     s.onload=()=>{ if($('#modal').classList.contains('open')) fillModal(); };
     document.head.appendChild(s);
