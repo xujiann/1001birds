@@ -39,7 +39,9 @@ def put(local_path, key, tries=3):
     ctype = ("image/jpeg" if k.endswith((".jpg", ".jpeg")) else
              "image/png"  if k.endswith(".png")  else
              "image/gif"  if k.endswith(".gif")  else
-             "image/webp" if k.endswith(".webp") else "application/octet-stream")
+             "image/webp" if k.endswith(".webp") else
+             "audio/mpeg"  if k.endswith(".mp3")  else
+             "audio/ogg"   if k.endswith((".ogg",".oga")) else "application/octet-stream")
     for a in range(tries):
         try:
             headers = {"Host": HOST, "Content-Type": ctype}
@@ -65,7 +67,7 @@ def main():
     limit = int(sys.argv[sys.argv.index("--limit")+1]) if "--limit" in sys.argv else None
     workers = int(sys.argv[sys.argv.index("--workers")+1]) if "--workers" in sys.argv else 8
     files = sorted([f for f in os.listdir(src)
-                    if f.lower().endswith((".jpg", ".jpeg", ".png", ".gif", ".webp"))],
+                    if f.lower().endswith((".jpg", ".jpeg", ".png", ".gif", ".webp", ".mp3", ".ogg", ".oga"))],
                    key=lambda x: int(x.split(".")[0]) if x.split(".")[0].isdigit() else 0)
     if limit: files = files[:limit]
     print("准备上传 %d 个文件 -> cos://%s/%s/ (并发 %d)" % (len(files), BUCKET, prefix, workers))

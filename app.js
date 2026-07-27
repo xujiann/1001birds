@@ -7,6 +7,9 @@ const DATA = (window.BIRD_DATA || []).slice();
 // 故去掉 images/ 前缀。本地预览把 IMG_BASE 置空即可用本地 images/。
 const IMG_BASE = 'https://pic-1302017848.cos.ap-nanjing.myqcloud.com/birds/';
 const imgURL = p => IMG_BASE ? IMG_BASE + String(p).replace(/^images\//, '') : p;
+// 鸣声：已转 MP3 并托管到 COS（源自 Commons，署名不变）。跨境直取 Commons 音频实测
+// 常 20~40 秒超时、且有 178MB 的极端文件，故改为自有存储。
+const SONG_BASE = IMG_BASE ? IMG_BASE + 'songs/' : 'songs/';
 const commonsURL = f => f && /^https?:/.test(f) ? f : 'https://commons.wikimedia.org/wiki/Special:FilePath/' + encodeURIComponent(f||'');
 
 const IUCN_ORDER = {EX:0,EW:1,CR:2,EN:3,VU:4,NT:5,LC:6,DD:7};
@@ -185,11 +188,16 @@ function setupSong(b){
   stopSong();
   if(!s){ wrap.style.display='none'; return; }
   wrap.style.display='flex';
-  $('#song-credit').textContent = s.a ? `${L[lang].rec}：${s.a}${s.l?' · '+s.l:''}` : '';
+  // 自有托管后仍须署名 + 回链 Commons 源文件（CC 要求标明作者/许可/来源）
+  const sp2 = [];
+  if(s.a) sp2.push(esc(s.a));
+  if(s.l) sp2.push(s.u ? `<a href="${esc(s.u)}" target="_blank" rel="noopener">${esc(s.l)}</a>` : esc(s.l));
+  if(s.f) sp2.push(`<a href="${commonsURL(s.f)}" target="_blank" rel="noopener">Commons</a>`);
+  $('#song-credit').innerHTML = sp2.length ? `${L[lang].rec}${lang==='zh'?'：':': '}${sp2.join(' · ')}` : '';
   btn.onclick=()=>{
     if(!songAudio){ songAudio=new Audio(); songAudio.onended=stopSong; }
     if(songPlaying){ stopSong(); return; }
-    songAudio.src = commonsURL(s.f); btn.textContent=L[lang].songLoad;
+    songAudio.src = SONG_BASE + b.id + '.mp3'; btn.textContent=L[lang].songLoad;
     songAudio.play().then(()=>{ songPlaying=true; btn.textContent=L[lang].songPause; btn.classList.add('playing'); })
       .catch(()=>{ btn.textContent=L[lang].songErr; setTimeout(()=>{btn.textContent=L[lang].songPlay;},1800); });
   };
@@ -307,7 +315,7 @@ function switchMode(mode){
   if(mode==='all' && !ALLREC){
     if(window.BIRD_ALL){ ALLREC=buildAllRecords(); go(); return; }
     if(allLoading) return; allLoading=true; $('#mode-btn').textContent=L[lang].modeLoad;
-    const s=document.createElement('script'); s.src='all.js?v=19';
+    const s=document.createElement('script'); s.src='all.js?v=20';
     s.onload=()=>{ ALLREC=buildAllRecords(); allLoading=false; go(); };
     s.onerror=()=>{ allLoading=false; $('#mode-btn').textContent=L[lang].modeAll; };
     document.head.appendChild(s);
@@ -501,7 +509,7 @@ if(initId) openModal(initId);
 // lazy-load non-critical data after core render (descriptions = 74% of payload; per-image credits)
 // — each refills an open modal on arrival
 setTimeout(function loadExtras(){
-  for(const src of ['descs.js?v=19','credits.js?v=19','songs.js?v=19']){
+  for(const src of ['descs.js?v=20','credits.js?v=20','songs.js?v=20']){
     const s=document.createElement('script'); s.src=src;
     s.onload=()=>{ if($('#modal').classList.contains('open')) fillModal(); };
     document.head.appendChild(s);
