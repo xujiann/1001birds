@@ -2,7 +2,7 @@
    images (same-origin /images + cross-origin jsDelivr) = cache-first (immutable via @v1 tag);
    everything else (html/css/js/data) = network-first, so shell updates are picked up immediately
    (avoids the stale-shell trap). Bump versions to purge. */
-const SHELL = 'birds-shell-v21';
+const SHELL = 'birds-shell-v22';
 const IMGS  = 'birds-imgs-v5';
 const CDN = 'https://pic-1302017848.cos.ap-nanjing.myqcloud.com/birds/';
 

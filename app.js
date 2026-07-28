@@ -91,7 +91,7 @@ function apply(){
     if(state.iucn && b.iucn!==state.iucn) return false;
     if(state.fam && b.family_en!==state.fam) return false;
     if(q){
-      const hay = [b.zh,b.en,b.sci,b.order_zh,b.order_en,b.family_zh,b.family_en,b.py,b.group,b.realm].join(' ').toLowerCase();
+      const hay = [b.zh,b.alias,b.en,b.sci,b.order_zh,b.order_en,b.family_zh,b.family_en,b.py,b.group,b.realm].filter(Boolean).join(' ').toLowerCase();
       if(!hay.includes(q)) return false;
     }
     return true;
@@ -318,7 +318,7 @@ function switchMode(mode){
   if(mode==='all' && !ALLREC){
     if(window.BIRD_ALL){ ALLREC=buildAllRecords(); go(); return; }
     if(allLoading) return; allLoading=true; $('#mode-btn').textContent=L[lang].modeLoad;
-    const s=document.createElement('script'); s.src='all.js?v=21';
+    const s=document.createElement('script'); s.src='all.js?v=22';
     s.onload=()=>{ ALLREC=buildAllRecords(); allLoading=false; go(); };
     s.onerror=()=>{ allLoading=false; $('#mode-btn').textContent=L[lang].modeAll; };
     document.head.appendChild(s);
@@ -512,7 +512,7 @@ if(initId) openModal(initId);
 // lazy-load non-critical data after core render (descriptions = 74% of payload; per-image credits)
 // — each refills an open modal on arrival
 setTimeout(function loadExtras(){
-  for(const src of ['descs.js?v=21','credits.js?v=21','songs.js?v=21']){
+  for(const src of ['descs.js?v=22','credits.js?v=22','songs.js?v=22']){
     const s=document.createElement('script'); s.src=src;
     s.onload=()=>{ if($('#modal').classList.contains('open')) fillModal(); };
     document.head.appendChild(s);
